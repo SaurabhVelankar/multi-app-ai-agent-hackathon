@@ -15,6 +15,7 @@ Inspired by the *outcome → sub-agents → apps* shape of [Perplexity Computer]
 |-----|---------|
 | [`PRD.md`](./PRD.md) | **Product anchor** — requirements, tiers, success bar |
 | [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md) | **Architecture anchor** — graph, state, adapters, failures |
+| [`CONNECTORS.md`](./CONNECTORS.md) | **Integrations bible** — OAuth, scopes, permissions, adapter rules |
 | [`Hackathon.md`](./Hackathon.md) | Event brief, judging, team constraints |
 | [`ideas.md`](./ideas.md) | Idea backlog (Life OS locked) |
 
