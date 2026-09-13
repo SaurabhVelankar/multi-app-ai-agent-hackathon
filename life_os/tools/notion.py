@@ -37,7 +37,9 @@ def create_notion_page(
     try:
         from life_os.adapters import notion_client
 
-        page = notion_client.create_page(title=title, body=body, run_id=run_id)
+        page = notion_client.create_page(
+            title=title, body=body, run_id=run_id, admin_id=admin_id
+        )
         result = make_tool_result(
             ok=True,
             app="notion",
