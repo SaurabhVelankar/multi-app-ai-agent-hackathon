@@ -1,0 +1,97 @@
+# --- Life OS / Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env/
+
+# Test / coverage / typecheck
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# --- Secrets & local env (never commit) ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+credentials.json
+client_secret*.json
+token.json
+token.pickle
+*.token.json
+google_token.json
+.oauth/
+
+# Keep the template
+!.env.example
+
+# --- LangChain / LangGraph / LLM ---
+.langgraph_api/
+.langsmith/
+**/checkpoints/
+*.ckpt
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs & runtime ---
+logs/
+*.log
+tmp/
+temp/
+.cache/
+
+# --- Local data / demos ---
+data/local/
+*.sqlite
+*.db
+.life_os/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Node (if we add a tiny UI later) ---
+node_modules/
+.next/
+.vercel/

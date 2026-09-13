@@ -2,6 +2,7 @@
 
 > **Project anchor.** Everything we build points here.  
 > Hackathon context: [`Hackathon.md`](./Hackathon.md) · Idea source: [`ideas.md`](./ideas.md)  
+> **System design:** [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md)  
 > **Status:** LOCKED — Idea #1 Life OS  
 > **Deadline:** Demo-ready by **4:00 PM PT** (build window ends)
 
@@ -62,96 +63,12 @@ Life fragments across inbox, calendar, tasks, and docs. Humans act as the integr
 
 ## 6. System design
 
-### 6.1 High-level architecture
+> **Canonical architecture lives in [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md).**  
+> This section is a product-facing summary only.
 
-```
-                    ┌─────────────────────────────────────────┐
-                    │              Life OS API / CLI            │
-                    │         (trigger: goal | email | chat)    │
-                    └────────────────────┬────────────────────┘
-                                         │
-                                         ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     LangGraph — Life Orchestrator                         │
-│                                                                          │
-│   Intake ──► Priority ──► Planner ──► Scheduler ──► Executor             │
-│      │                                           │         │             │
-│      │                                           │         ▼             │
-│      │                                           │      Critic (gate)    │
-│      │                                           │         │             │
-│      └────────────── Auditor ◄───────────────────┴─────────┘             │
-│                         │                                                │
-│              checkpointer + LifeState                                     │
-└─────────────┬───────────┬────────────┬────────────┬──────────────────────┘
-              ▼           ▼            ▼            ▼
-           Gmail     Calendar       Notion        Slack
-                                      +
-                                   Sheets (audit)
-```
+**Shape:** LangGraph pipeline — Intake → Priority → Planner → Scheduler → Executor → Critic → Auditor — with shared `LifeState`, tool adapters for Gmail / Calendar / Notion / Slack / Sheets, and HITL before irreversible actions (e.g. email send).
 
-### 6.2 Agent roster
-
-| Agent | Responsibility | Writes? |
-|-------|----------------|---------|
-| **Intake** | Normalize trigger → structured intents (`meeting`, `task`, `follow_up`, `info`) | No |
-| **Priority** | Rank by deadline, people, irreversibility, confidence | No |
-| **Planner** | Produce ordered step list bound to tools/apps | No |
-| **Scheduler** | Propose/create Calendar blocks; detect conflicts | Yes (Calendar) |
-| **Executor** | Notion pages/tasks, draft Gmail replies, Slack posts | Yes (gated) |
-| **Critic** | Confidence + policy checks; force HITL or abort | No (controls edges) |
-| **Auditor** | Persist run trace + outcomes to Sheets | Yes (Sheets) |
-
-*Stubs allowed for non-demo agents if interfaces + graph nodes exist — but the **demo path** must be fully live.*
-
-### 6.3 Shared state (`LifeState`)
-
-Minimum fields (Tier 0):
-
-```text
-run_id, trigger, intents[], priority_scores{},
-plan_steps[], calendar_actions[], drafts[],
-approvals{}, tool_results{}, errors[], status
-```
-
-### 6.4 LangGraph pattern
-
-**Plan → Execute → Critic** with a thin **supervisor-style** routing on `status` / `needs_approval`.
-
-| Edge | Condition |
-|------|-----------|
-| Intake → Priority | intents non-empty |
-| Priority → Planner | top intent confidence ≥ threshold **or** user forced |
-| Planner → Scheduler | plan contains time-bound steps |
-| Scheduler → Executor | calendar OK / skipped |
-| Executor → Critic | always |
-| Critic → Auditor | pass **or** after HITL resolve |
-| Critic → HITL interrupt | irreversible action pending |
-| Any → Auditor → END | terminal success / safe failure |
-
-**Checkpointing:** LangGraph checkpointer (memory OK for Tier 0; SQLite glow-up).
-
-### 6.5 External apps (locked for v1 demo path)
-
-| App | Role | Free/freemium |
-|-----|------|---------------|
-| **Gmail** | Intake signal + draft/send (send = HITL) | Google OAuth |
-| **Google Calendar** | Create/propose events | Google OAuth |
-| **Notion** | Life notes / task capture | Free API |
-| **Slack** | Approvals + run receipt | Free workspace bot |
-| **Google Sheets** | Audit / reliability evidence | Google OAuth |
-
-**Hard requirement:** ≥3 apps with **real writes** on the happy path. Recommended live writes for demo: **Calendar + Notion + Slack + Sheets** (Gmail can be mock inbox fixture if OAuth burns time — but prefer live draft).
-
-### 6.6 Trust & safety
-
-| Action | Policy |
-|--------|--------|
-| Create Calendar event | Allowed if confidence high; else propose only |
-| Create Notion page/row | Allowed |
-| Post Slack receipt | Allowed |
-| Append Sheets audit | Always |
-| **Send Gmail** | **HITL required** |
-| Delete anything | Forbidden in hackathon build |
+**For judges / builders:** layers, node contracts, state schema, sequences, failure modes, idempotency, ADRs → see the system design doc.
 
 ---
 
