@@ -39,10 +39,30 @@ def scheduler_node(state: Mapping[str, Any]) -> dict[str, Any]:
     for step in cal_steps:
         intent_id = str(step.get("intent_id") or step.get("id") or "intent")
         idem = str(step.get("idempotency_key") or f"cal:{run_id}:{intent_id}")
-        title = str(step.get("title") or step.get("summary") or "Life OS meeting")
-        start = str(step.get("start") or step.get("start_iso") or "")
-        end = str(step.get("end") or step.get("end_iso") or "")
-        confidence = float(step.get("confidence") or state.get("priority_scores", {}).get(intent_id) or 1.0)
+        args = step.get("args") if isinstance(step.get("args"), dict) else {}
+        title = str(
+            step.get("title")
+            or args.get("title")
+            or step.get("summary")
+            or "Life OS meeting"
+        )
+        start = str(
+            step.get("start")
+            or step.get("start_iso")
+            or args.get("start")
+            or "2026-09-15T15:00:00Z"
+        )
+        end = str(
+            step.get("end")
+            or step.get("end_iso")
+            or args.get("end")
+            or "2026-09-15T15:30:00Z"
+        )
+        confidence = float(
+            step.get("confidence")
+            or (state.get("selected_intent") or {}).get("confidence")
+            or 1.0
+        )
         create = bool(step.get("create", confidence >= 0.7))
 
         result = create_calendar_event(

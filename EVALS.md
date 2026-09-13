@@ -20,14 +20,12 @@ Trigger payloads live in [`life_os/fixtures/`](life_os/fixtures/):
 
 | Fixture | Type | Exercises |
 |---------|------|-----------|
-| `meeting_email.json` | `email` | Clear meeting request → intake extracts intent, planner proposes a calendar event |
-| `goal_simple.json` | `goal` | Free-text goal → follow-up + Notion summary |
+| `meeting_email.json` | `email` | Clear meeting → calendar + notion + slack + sheets audit; Gmail draft only (no send) |
+| `goal_simple.json` | `goal` | Free-text goal → follow-up + Notion + audit |
+| `ambiguous_email.json` | `email` | Low confidence / irreversible → `needs_approval`; never Gmail send |
+| `newsletter_not_meeting.json` | `email` | FYI / info_only → no calendar write; clean `pass`/`abort` + audit when pass |
 
-PRD F2.3 asks for **≥3 golden fixtures with assertable side-effect checks**.
-The two above cover the happy path; still missing an **ambiguous / low-confidence**
-fixture (should hit `needs_approval`, not silently send) and a **not-a-meeting**
-fixture (should reach a clean abort/info path with no calendar write) — see
-§4 for how to add them.
+PRD F2.3 asks for **≥3 golden fixtures with assertable side-effect checks** — covered by the suite above.
 
 A fixture is a plain JSON file with:
 
@@ -80,7 +78,13 @@ canned intake/priority/planner responses, and connectors run in mock mode.
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Full graph, golden-path assertions:
+# Golden fixtures through the full graph (EVALS.md / PRD F2.3):
+pytest tests/evals/ -q
+
+# Ad-hoc single fixture (mock LLM defaults for meeting_email.json):
+python -m life_os.evals meeting_email.json
+
+# Full graph smoke:
 pytest tests/orchestrator/test_graph.py -q
 
 # Per-app side-effect assertions (scheduler → executor → auditor):
@@ -92,20 +96,21 @@ pytest tests/ -q
 
 What each currently asserts:
 
+- `tests/evals/test_golden_fixtures.py` — full-graph golden evals via
+  `life_os.evals.run_eval` (mocked LLM + `LIFE_OS_USE_MOCK_CONNECTORS=1`):
+  - meeting email → `calendar`/`notion`/`slack`/`sheets` ok, `audit_ref`, no send
+  - goal simple → notion + sheets audit, no send
+  - ambiguous → `needs_approval`, no Gmail send
+  - newsletter → no calendar write; `pass`/`abort` with audit on pass
 - `tests/orchestrator/test_graph.py::test_stub_run_reaches_pass` — a mocked
-  meeting request reaches a terminal status (`pass` / `needs_approval` /
-  `abort` / `error`), never hangs mid-graph.
+  meeting request reaches a terminal status, never hangs mid-graph.
 - `tests/orchestrator/test_graph.py::test_graph_has_all_nodes` — the 8
   pipeline nodes are all wired into the compiled graph.
 - `tests/integrations/test_tools_mock.py::test_scheduler_executor_auditor_happy_path`
-  — the closest thing to a full golden-fixture eval today: feeds a plan with
-  a calendar step + Notion + Slack + Gmail-draft steps through
-  `scheduler_node` → `executor_node` → `auditor_node` and asserts `calendar`,
-  `notion`, `slack`, and `sheets` all appear in `tool_results` with `ok=True`,
-  an `audit_ref` was set, a Gmail draft was staged, and `errors == []`.
+  — node-level happy path: calendar + Notion + Slack + Gmail-draft through
+  scheduler → executor → auditor.
 - `tests/integrations/test_tools_mock.py::test_calendar_propose_only` —
-  `create=False` never fabricates a real write (`proposed_only: true`,
-  `external_id: None`).
+  `create=False` never fabricates a real write (`proposed_only: true`).
 - `tests/integrations/test_tools_mock.py::test_send_blocked_on_error_draft` —
   a failed draft can never be sent.
 
@@ -119,21 +124,11 @@ see [`FAMILY_ADMIN.md`](FAMILY_ADMIN.md) §5.
 ## 4. Adding a new golden fixture
 
 1. Drop a JSON file in `life_os/fixtures/` (see the shape in §1).
-2. Add a pytest case near `test_scheduler_executor_auditor_happy_path` (or a
-   new `tests/evals/test_<fixture_name>.py`) that:
-   - builds the initial `LifeState` from the fixture (see
-     `life_os/__main__.py::_fixture_to_trigger` for the trigger shape),
-   - mocks the three LLM call sites (`life_os.agents.intake.ChatAnthropic`,
-     `.priority.ChatAnthropic`, `.planner.ChatAnthropic`) with fixture-specific
-     canned responses, the way `test_graph.py::test_stub_run_reaches_pass`
-     does,
-   - runs `graph.invoke(state, config)`,
-   - asserts on the *side effects*, not just the status — e.g. for the
-     ambiguous fixture: `result["needs_approval"] is True` and no `sent`
-     Gmail tool_result exists; for not-a-meeting: no `"calendar"` in
-     `tool_results` apps and `status in {"abort", "pass"}` with an
-     `audit_ref` still set.
-3. Run it in isolation first (`pytest tests/.../test_your_fixture.py -q -v`)
+2. Add a pytest case in `tests/evals/test_golden_fixtures.py` that calls
+   `life_os.evals.run_eval(fixture_name, intake_json=..., priority_json=...,
+   planner_json=...)` and asserts on *side effects* (apps in `tool_results`,
+   `needs_approval`, `audit_ref`, no Gmail `send`) — not just status.
+3. Run it in isolation first (`pytest tests/evals/test_golden_fixtures.py -q -k your_case -v`)
    before folding it into the full suite.
 
 ---

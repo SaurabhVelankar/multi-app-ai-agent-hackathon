@@ -1,0 +1,9 @@
+{
+  "fixture_id": "fixture-not-meeting-001",
+  "type": "email",
+  "subject": "Weekly product newsletter — Sept 2026",
+  "from": "news@example.com",
+  "to": "me@example.com",
+  "date": "2026-09-13T08:00:00Z",
+  "body": "Here is this week's product newsletter: new features shipped, blog posts to read, and a link to the changelog. No action required — this is FYI only. Unsubscribe anytime."
+}
