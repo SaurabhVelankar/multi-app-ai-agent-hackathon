@@ -1,9 +1,8 @@
 """Priority node — rank intents and select one for Tier-0 demo path."""
 import json
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from life_os.config import LLM_MODEL, ANTHROPIC_API_KEY
+from life_os.llm import get_chat_model
 from life_os.state import LifeState
 
 
@@ -37,6 +36,29 @@ def _deterministic_score(intent: dict) -> float:
     return (w["deadline"] + w["people"] + w["irreversibility"]) * conf
 
 
+def _content_to_text(content) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict) and "text" in block:
+                parts.append(str(block["text"]))
+            else:
+                parts.append(str(block))
+        return "".join(parts)
+    return str(content)
+
+
+def _parse_json(text: str) -> dict:
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    return json.loads(cleaned)
+
+
 def priority_node(state: LifeState) -> dict:
     intents = state.get("intents", [])
     if not intents:
@@ -49,12 +71,12 @@ def priority_node(state: LifeState) -> dict:
     priority_scores: dict = {}
     if len(intents) > 1:
         try:
-            llm = ChatAnthropic(model=LLM_MODEL, api_key=ANTHROPIC_API_KEY, temperature=0)
+            llm = get_chat_model(temperature=0)
             response = llm.invoke([
                 SystemMessage(content=_SYSTEM),
                 HumanMessage(content=json.dumps({"intents": intents})),
             ])
-            parsed = json.loads(response.content)
+            parsed = _parse_json(_content_to_text(response.content))
             priority_scores = parsed.get("scores", {})
         except Exception:
             pass

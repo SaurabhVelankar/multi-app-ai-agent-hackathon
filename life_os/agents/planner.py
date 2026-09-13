@@ -1,10 +1,9 @@
 """Planner node — convert selected_intent into ordered plan_steps[]."""
 import json
 import uuid
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from life_os.config import LLM_MODEL, ANTHROPIC_API_KEY
+from life_os.llm import get_chat_model
 from life_os.state import LifeState
 
 
@@ -34,6 +33,29 @@ Rules:
 """
 
 
+def _content_to_text(content) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict) and "text" in block:
+                parts.append(str(block["text"]))
+            else:
+                parts.append(str(block))
+        return "".join(parts)
+    return str(content)
+
+
+def _parse_json(text: str) -> dict:
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    return json.loads(cleaned)
+
+
 def planner_node(state: LifeState) -> dict:
     selected = state.get("selected_intent")
     if not selected:
@@ -45,12 +67,12 @@ def planner_node(state: LifeState) -> dict:
     }
 
     try:
-        llm = ChatAnthropic(model=LLM_MODEL, api_key=ANTHROPIC_API_KEY, temperature=0.1)
+        llm = get_chat_model(temperature=0.1)
         response = llm.invoke([
             SystemMessage(content=_SYSTEM),
             HumanMessage(content=json.dumps(context)),
         ])
-        parsed = json.loads(response.content)
+        parsed = _parse_json(_content_to_text(response.content))
         steps = parsed.get("plan_steps", [])
         for step in steps:
             if "id" not in step or not step["id"]:

@@ -1,10 +1,9 @@
 """Intake node — normalise trigger into intents[]."""
 import json
 import uuid
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from life_os.config import LLM_MODEL, ANTHROPIC_API_KEY
+from life_os.llm import get_chat_model
 from life_os.state import LifeState
 
 
@@ -36,8 +35,27 @@ Rules:
 """
 
 
-def _build_llm():
-    return ChatAnthropic(model=LLM_MODEL, api_key=ANTHROPIC_API_KEY, temperature=0.2)
+def _content_to_text(content) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict) and "text" in block:
+                parts.append(str(block["text"]))
+            else:
+                parts.append(str(block))
+        return "".join(parts)
+    return str(content)
+
+
+def _parse_json(text: str) -> dict:
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    return json.loads(cleaned)
 
 
 def intake_node(state: LifeState) -> dict:
@@ -46,20 +64,20 @@ def intake_node(state: LifeState) -> dict:
     if isinstance(raw, dict):
         raw = json.dumps(raw, indent=2)
 
-    llm = _build_llm()
+    llm = get_chat_model(temperature=0.2)
     response = llm.invoke([
         SystemMessage(content=_SYSTEM),
         HumanMessage(content=str(raw)),
     ])
 
     try:
-        parsed = json.loads(response.content)
+        parsed = _parse_json(_content_to_text(response.content))
         intents = parsed.get("intents", [])
         normalized = parsed.get("normalized_context", {})
         for intent in intents:
             if "id" not in intent or not intent["id"]:
                 intent["id"] = str(uuid.uuid4())
-    except (json.JSONDecodeError, AttributeError):
+    except (json.JSONDecodeError, AttributeError, TypeError):
         intents = [{
             "id": str(uuid.uuid4()),
             "type": "info",

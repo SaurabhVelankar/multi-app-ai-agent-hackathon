@@ -318,7 +318,7 @@ Canonical templates: [`.env.example`](./.env.example) (committed) · `.env.local
 ```text
 # Active (v1 LLM)
 GEMINI_API_KEY=
-GEMINI_MODEL_NAME=gemini-2.5-flash
+GEMINI_MODEL_NAME=gemini-3.6-flash
 
 # Integrations — uncomment / fill as adapters land
 GOOGLE_OAUTH_CLIENT_ID=

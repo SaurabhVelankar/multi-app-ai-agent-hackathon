@@ -423,7 +423,7 @@ Keep [`.env.example`](./.env.example) synchronized with this table.
 | Variable | Connector | Required for live? |
 |----------|-----------|--------------------|
 | `GEMINI_API_KEY` | LLM (not a life app) | Yes for real reasoning |
-| `GEMINI_MODEL_NAME` | LLM | Yes (default `gemini-2.5-flash`) |
+| `GEMINI_MODEL_NAME` | LLM | Yes (default `gemini-3.6-flash`) |
 | `GOOGLE_OAUTH_CLIENT_ID` | Gmail/Calendar/Sheets | Yes for Google live |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | Gmail/Calendar/Sheets | Yes |
 | `GOOGLE_OAUTH_TOKEN_PATH` | Gmail/Calendar/Sheets | Yes |
