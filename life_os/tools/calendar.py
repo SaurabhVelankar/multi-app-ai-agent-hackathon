@@ -52,7 +52,7 @@ def create_calendar_event(
     try:
         from life_os.adapters import google_auth
 
-        service = google_auth.build_service("calendar", "v3", admin_id=admin_id)
+        service = google_auth.build_service("calendar", "v3")
         calendar_id = env("GOOGLE_CALENDAR_ID", "primary") or "primary"
         body: dict[str, Any] = {
             "summary": title,

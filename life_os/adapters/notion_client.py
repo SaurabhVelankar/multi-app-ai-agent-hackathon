@@ -23,14 +23,10 @@ def credentials_available() -> bool:
     return bool(env("NOTION_TOKEN") and (env("NOTION_PARENT_PAGE_ID") or env("NOTION_DATABASE_ID")))
 
 
-def _headers(admin_id: Optional[str] = None) -> dict[str, str]:
-    from life_os.admins import notion_token_for
-
-    token = notion_token_for(admin_id)
+def _headers() -> dict[str, str]:
+    token = env("NOTION_TOKEN")
     if not token:
-        raise NotionClientError(
-            f"Notion token missing for admin_id={admin_id!r} (set ADMIN_XX_NOTION_TOKEN or NOTION_TOKEN)"
-        )
+        raise NotionClientError("NOTION_TOKEN missing")
     return {
         "Authorization": f"Bearer {token}",
         "Notion-Version": NOTION_VERSION,
@@ -38,18 +34,10 @@ def _headers(admin_id: Optional[str] = None) -> dict[str, str]:
     }
 
 
-def _request(
-    method: str,
-    path: str,
-    body: Optional[dict] = None,
-    *,
-    admin_id: Optional[str] = None,
-) -> dict[str, Any]:
+def _request(method: str, path: str, body: Optional[dict] = None) -> dict[str, Any]:
     url = f"https://api.notion.com/v1{path}"
     data = None if body is None else json.dumps(body).encode("utf-8")
-    req = urllib.request.Request(
-        url, data=data, headers=_headers(admin_id), method=method
-    )
+    req = urllib.request.Request(url, data=data, headers=_headers(), method=method)
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read().decode("utf-8"))
@@ -60,13 +48,7 @@ def _request(
         raise NotionClientError(f"Notion network error: {exc}") from exc
 
 
-def create_page(
-    *,
-    title: str,
-    body: str,
-    run_id: str,
-    admin_id: Optional[str] = None,
-) -> dict[str, Any]:
+def create_page(*, title: str, body: str, run_id: str) -> dict[str, Any]:
     """Create a child page under NOTION_PARENT_PAGE_ID or a DB row if DATABASE_ID set."""
     parent_page = env("NOTION_PARENT_PAGE_ID")
     database_id = env("NOTION_DATABASE_ID")
@@ -113,12 +95,12 @@ def create_page(
     else:
         raise NotionClientError("Set NOTION_PARENT_PAGE_ID or NOTION_DATABASE_ID")
 
-    return _request("POST", "/pages", payload, admin_id=admin_id)
+    return _request("POST", "/pages", payload)
 
 
-def healthcheck(admin_id: Optional[str] = None) -> bool:
+def healthcheck() -> bool:
     try:
-        _request("GET", "/users/me", admin_id=admin_id)
+        _request("GET", "/users/me")
         return True
     except NotionClientError:
         return False

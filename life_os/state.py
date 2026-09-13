@@ -30,10 +30,7 @@ class LifeState(TypedDict, total=False):
     run_id: str
     thread_id: str
     created_at: str                        # ISO8601
-    family_id: str | None
-    admin_id: str | None                   # requester / token owner for writes
-    shared_with: list[str]                 # admin_ids who may view this run
-    approval_assignee: str | None          # HITL primary target
+    admin_id: str | None
     trigger: TriggerDict
     normalized_context: dict
     intents: Annotated[list[IntentDict], operator.add]

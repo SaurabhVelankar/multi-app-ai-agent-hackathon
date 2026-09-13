@@ -1,38 +1,14 @@
 """Test FastAPI routes with mocked graph."""
-import os
-
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
-from life_os.admins import reload_roster
 from life_os.api import app
 
 
 @pytest.fixture
 def client():
     return TestClient(app)
-
-
-@pytest.fixture
-def family_roster(monkeypatch):
-    """A known 3-admin roster (owner/operator/viewer) for tests that need one."""
-    monkeypatch.setenv("FAMILY_ID", "api_test_family")
-    monkeypatch.setenv("ADMIN_MAX", "10")
-    monkeypatch.setenv("HITL_POLICY", "any_of")
-    monkeypatch.setenv("ADMIN_IDS", "owner_1,op_1,viewer_1")
-    monkeypatch.setenv("OWNER_1_ROLE", "owner")
-    monkeypatch.setenv("OP_1_ROLE", "operator")
-    monkeypatch.setenv("VIEWER_1_ROLE", "viewer")
-    reload_roster()
-    yield
-    for key in list(os.environ):
-        if key.startswith(("ADMIN_", "OWNER_1_", "OP_1_", "VIEWER_1_")) or key in {
-            "FAMILY_ID",
-            "HITL_POLICY",
-        }:
-            monkeypatch.delenv(key, raising=False)
-    reload_roster()
 
 
 def _mock_state(status="pass", needs_approval=False):
@@ -122,7 +98,7 @@ def test_approve_run_not_in_approval_state(client):
     assert resp.status_code == 409
 
 
-def test_approve_run_deny(client, family_roster):
+def test_approve_run_deny(client):
     approval_state = _mock_state(status="needs_approval", needs_approval=True)
     final_state = _mock_state(status="abort", needs_approval=False)
     mock_snap_approval = MagicMock()
@@ -135,85 +111,44 @@ def test_approve_run_deny(client, family_roster):
         mock_graph.update_state.return_value = None
         resp = client.post("/runs/test-run-123/approve", json={
             "decision": "deny",
-            "admin_id": "op_1",
+            "admin_id": "user1",
         })
 
     assert resp.status_code == 200
     assert resp.json()["status"] == "abort"
 
 
-def test_approve_run_unknown_admin_denied(client, family_roster):
+def test_admin_roster_limit(client):
     mock_snap = MagicMock()
-    mock_snap.values = _mock_state(status="needs_approval", needs_approval=True)
+    mock_snap.values = _mock_state()
 
-    with patch("life_os.api.graph") as mock_graph:
+    with patch("life_os.api.graph") as mock_graph, \
+         patch("life_os.api._admin_roster", {f"user{i}": "ts" for i in range(10)}):
+        mock_graph.invoke.return_value = None
         mock_graph.get_state.return_value = mock_snap
-        resp = client.post("/runs/test-run-123/approve", json={
-            "decision": "approve",
-            "admin_id": "not_in_roster",
-        })
 
-    assert resp.status_code == 403
-
-
-def test_approve_run_viewer_denied(client, family_roster):
-    mock_snap = MagicMock()
-    mock_snap.values = _mock_state(status="needs_approval", needs_approval=True)
-
-    with patch("life_os.api.graph") as mock_graph:
-        mock_graph.get_state.return_value = mock_snap
-        resp = client.post("/runs/test-run-123/approve", json={
-            "decision": "approve",
-            "admin_id": "viewer_1",
-        })
-
-    assert resp.status_code == 403
-
-
-def test_create_run_unknown_admin_rejected(client, family_roster):
-    resp = client.post("/runs", json={
-        "trigger_type": "goal",
-        "trigger_payload": "test",
-        "admin_id": "not_in_roster",
-    })
-
-    assert resp.status_code == 403
-
-
-def test_admin_roster_limit(client, family_roster):
-    # Roster already has 3 members; drop the cap to force "full" without
-    # actually adding 10 more admins.
-    with patch("life_os.api.get_roster") as mock_get_roster:
-        from life_os.admins import get_roster as real_get_roster
-
-        roster = real_get_roster()
-        roster.admin_max = len(roster.admins)
-        mock_get_roster.return_value = roster
-
-        resp = client.post("/admins", json={
-            "acting_admin_id": "owner_1",
-            "admin_id": "overflow_admin",
-            "name": "Overflow",
-            "role": "operator",
+        resp = client.post("/runs", json={
+            "trigger_type": "goal",
+            "trigger_payload": "test",
+            "admin_id": "user_new",
         })
 
     assert resp.status_code == 400
     assert "full" in resp.json()["detail"].lower()
 
 
-def test_idempotency(client, family_roster):
+def test_idempotency(client):
     mock_snap = MagicMock()
     mock_snap.values = _mock_state()
 
     with patch("life_os.api.graph") as mock_graph, \
-         patch("life_os.api._source_to_run", {("owner_1", "src-001"): "existing-run-id"}):
+         patch("life_os.api._source_to_run", {"src-001": "existing-run-id"}):
         mock_graph.get_state.return_value = mock_snap
 
         resp = client.post("/runs", json={
             "trigger_type": "email",
             "trigger_payload": {"subject": "test"},
             "source_id": "src-001",
-            "admin_id": "owner_1",
         })
 
     assert resp.status_code == 200

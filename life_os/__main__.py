@@ -5,7 +5,6 @@ import json
 import uuid
 from pathlib import Path
 
-from life_os.admins import get_roster
 from life_os.graph import graph
 from life_os.state import LifeState
 
@@ -41,24 +40,13 @@ def main():
 
     fixture = _load_fixture(args.fixture)
     trigger = _fixture_to_trigger(fixture)
-    roster = get_roster()
-
-    admin_id = args.admin_id
-    if admin_id is None:
-        owner = roster.owner()
-        admin_id = owner.admin_id if owner else None
-    elif roster.get(admin_id) is None:
-        raise SystemExit(f"Unknown admin_id={admin_id}. Known: {list(roster.admins)}")
 
     run_id = str(uuid.uuid4())
     initial_state: LifeState = {
         "run_id": run_id,
         "thread_id": run_id,
         "created_at": datetime.datetime.utcnow().isoformat() + "Z",
-        "family_id": roster.family_id,
-        "admin_id": admin_id,
-        "shared_with": roster.default_shared_with(),
-        "approval_assignee": None,
+        "admin_id": args.admin_id,
         "trigger": trigger,
         "normalized_context": {},
         "intents": [],

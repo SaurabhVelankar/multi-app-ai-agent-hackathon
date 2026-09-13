@@ -16,17 +16,6 @@ def _apps_touched(state: Mapping[str, Any]) -> list[str]:
     return apps
 
 
-def _oauth_account(admin_id: Any) -> str | None:
-    if not admin_id:
-        return None
-    try:
-        from life_os.adapters import google_auth
-
-        return google_auth.oauth_status(str(admin_id)).get("email")
-    except Exception:  # noqa: BLE001
-        return None
-
-
 def auditor_node(state: Mapping[str, Any]) -> dict[str, Any]:
     from life_os.tools.sheets import append_sheets_audit
 
@@ -39,19 +28,9 @@ def auditor_node(state: Mapping[str, Any]) -> dict[str, Any]:
     if errors and status == "pass":
         status = "partial"
 
-    # Today the API sets approval_assignee to the acting approver's admin_id
-    # once a decision lands, so "approver" mirrors it; kept as separate audit
-    # columns so a future split (assigned target vs. who actually approved)
-    # doesn't require a schema change.
-    approval_assignee = state.get("approval_assignee")
-
     row = {
         "run_id": run_id,
-        "family_id": state.get("family_id"),
         "admin_id": admin_id,
-        "approver": approval_assignee,
-        "approval_assignee": approval_assignee,
-        "oauth_account": _oauth_account(admin_id),
         "status": status,
         "apps_touched": _apps_touched(state),
         "errors": errors,

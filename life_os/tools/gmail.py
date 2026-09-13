@@ -37,7 +37,7 @@ def draft_gmail_reply(
     try:
         from life_os.adapters import google_auth
 
-        service = google_auth.build_service("gmail", "v1", admin_id=admin_id)
+        service = google_auth.build_service("gmail", "v1")
         message = MIMEText(body)
         message["Subject"] = f"Life OS follow-up ({run_id})"
         raw = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
@@ -101,7 +101,7 @@ def send_gmail(
     try:
         from life_os.adapters import google_auth
 
-        service = google_auth.build_service("gmail", "v1", admin_id=admin_id)
+        service = google_auth.build_service("gmail", "v1")
         sent = (
             service.users()
             .drafts()
