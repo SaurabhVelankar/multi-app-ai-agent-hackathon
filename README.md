@@ -9,11 +9,44 @@ Inspired by the *outcome → sub-agents → apps* shape of [Perplexity Computer]
 
 ---
 
+## How it works
+
+You give it a **goal** ("schedule a sync with Sarah next week") or forward an **email**, and it runs through a fixed pipeline of specialist steps — a LangGraph state machine, not a free-form chat agent:
+
+```
+trigger (goal / email)
+   │
+   ▼
+ intake      → pulls out intent(s): what does this actually ask for?
+   ▼
+ priority    → scores + picks the one intent to act on
+   ▼
+ planner     → turns it into concrete steps (create event, draft email, notion page, …)
+   ▼
+ scheduler   → resolves times / calendar conflicts for any time-bound steps
+   ▼
+ executor    → performs the safe writes, stages anything irreversible (e.g. an email) as a draft
+   ▼
+ critic      → decides: pass straight through, or stop for human approval?
+   │               │
+   │ pass           needs_approval
+   ▼               ▼
+   │           human approves/denies (Slack or CLI) → resumes
+   ▼               ▼
+ auditor     → logs the outcome (who, what, which apps, errors) to the audit trail
+   ▼
+ done (pass / needs_approval / abort / error)
+```
+
+Every step of a run carries an `admin_id` — whichever family member triggered it — and app writes always use *that* person's connected accounts, even if someone else approves the HITL step. See [`FAMILY_ADMIN.md`](./FAMILY_ADMIN.md) for the multi-admin/approval model and [`EVALS.md`](./EVALS.md) for how this pipeline is tested end-to-end.
+
+---
+
 ## Current app state (read this first)
 
 | Area | Status | Notes |
 |------|--------|--------|
-| **Orchestrator** | Working | LangGraph: intake → priority → planner → scheduler → executor → critic → HITL → auditor |
+| **Orchestrator** | Working | LangGraph pipeline — see [How it works](#how-it-works) above |
 | **API** | Working | FastAPI on `:8000` — `POST /runs`, `GET /runs/{id}`, `POST /runs/{id}/approve`, `GET /health` |
 | **Frontend** | Working | Next.js cockpit in [`web/`](./web/) on `:3000` |
 | **LLM** | **Gemini (default)** | `LLM_PROVIDER=gemini`, model `gemini-3.6-flash` — needs `GEMINI_API_KEY` in `.env` |
