@@ -1,0 +1,12 @@
+{
+  "spreadsheet_title": "Riley Life OS Audit",
+  "rows": [
+    [
+      "run_id",
+      "timestamp",
+      "status",
+      "apps_touched",
+      "notes"
+    ]
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "calendar_id": "primary",
+  "timezone": "America/New_York",
+  "events": [
+    {
+      "id": "evt-avery-flight",
+      "summary": "Flight SFO \u2192 JFK",
+      "start": "2026-09-14T08:00:00-07:00",
+      "end": "2026-09-14T16:30:00-04:00",
+      "busy": true,
+      "source": "seed"
+    },
+    {
+      "id": "evt-avery-hotel",
+      "summary": "Hotel check-in buffer",
+      "start": "2026-09-14T18:00:00-04:00",
+      "end": "2026-09-14T19:00:00-04:00",
+      "busy": true,
+      "source": "seed"
+    },
+    {
+      "id": "evt-avery-breakfast",
+      "summary": "Breakfast with investor",
+      "start": "2026-09-16T08:00:00-04:00",
+      "end": "2026-09-16T09:00:00-04:00",
+      "busy": true,
+      "source": "seed"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-morgan-home",
+      "title": "Morgan Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

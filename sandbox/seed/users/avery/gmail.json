@@ -1,0 +1,37 @@
+{
+  "mailbox": "avery@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-avery-001",
+      "thread_id": "thread-avery-001",
+      "label": "inbox",
+      "scenario": "travel_timezone",
+      "subject": "Call while you're in NYC?",
+      "from": "partner-eu@example.com",
+      "to": [
+        "avery@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T11:40:00Z",
+      "snippet": "Tuesday 9am your time?",
+      "body": "Avery \u2014 you're in NYC this week, right? Can we do a 30-min partner call Tuesday at 9:00am local for you? I'll join from London.\n\n\u2014 EU Partner"
+    },
+    {
+      "id": "msg-avery-002",
+      "thread_id": "thread-avery-002",
+      "label": "inbox",
+      "scenario": "meeting_clear",
+      "subject": "Airport transfer confirmation",
+      "from": "travel@concierge.example",
+      "to": [
+        "avery@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-12T16:00:00Z",
+      "snippet": "Car to JFK Sunday 4pm",
+      "body": "Confirmed: car to JFK on Sunday at 4:00pm ET. Reply only if you need to change."
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}

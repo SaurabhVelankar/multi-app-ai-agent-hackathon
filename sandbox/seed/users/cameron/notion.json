@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-cameron-home",
+      "title": "Cameron Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

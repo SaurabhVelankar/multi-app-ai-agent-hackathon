@@ -1,0 +1,37 @@
+{
+  "mailbox": "taylor@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-taylor-001",
+      "thread_id": "thread-taylor-001",
+      "label": "inbox",
+      "scenario": "double_book_risk",
+      "subject": "Can we meet Tuesday 10\u201311am?",
+      "from": "client@bigco.example",
+      "to": [
+        "taylor@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T12:30:00Z",
+      "snippet": "Need a decision call Tuesday morning",
+      "body": "Taylor \u2014 can we lock a decision call Tuesday 10:00\u201311:00am PT? Critical for the contract.\n\nClient @ BigCo"
+    },
+    {
+      "id": "msg-taylor-002",
+      "thread_id": "thread-taylor-002",
+      "label": "inbox",
+      "scenario": "meeting_clear",
+      "subject": "Optional: office hours Friday",
+      "from": "mentor@example.com",
+      "to": [
+        "taylor@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T09:00:00Z",
+      "snippet": "Drop in anytime Friday 1\u20132pm",
+      "body": "Office hours Friday 1\u20132pm if you want feedback on the pitch. Optional \u2014 no need to RSVP."
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}

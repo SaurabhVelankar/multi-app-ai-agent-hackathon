@@ -49,6 +49,33 @@ def create_calendar_event(
                 end=end,
                 idempotency_key=idempotency_key,
             )
+            conflicts = event.get("conflicts") or []
+            proposed_only = bool(event.get("proposed_only"))
+            if proposed_only or conflicts:
+                print(
+                    f"[sandbox:calendar] CONFLICT user={user_id} title={title!r} "
+                    f"overlaps={len(conflicts)} → propose only"
+                )
+                result = make_tool_result(
+                    ok=True,
+                    app="calendar",
+                    action="propose_event",
+                    external_id=None,
+                    idempotency_key=idempotency_key,
+                    raw={
+                        "sandbox": True,
+                        "user_id": user_id,
+                        "title": title,
+                        "start": start,
+                        "end": end,
+                        "run_id": run_id,
+                        "conflicts": conflicts,
+                        "reason": "busy_overlap",
+                    },
+                    proposed_only=True,
+                )
+                return idempotency.put_cached(admin_id, idempotency_key, result)
+
             print(
                 f"[sandbox:calendar] create_event user={user_id} "
                 f"title={title!r} id={event['id']}"

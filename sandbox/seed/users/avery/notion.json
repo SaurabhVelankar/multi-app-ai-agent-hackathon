@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-avery-home",
+      "title": "Avery Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

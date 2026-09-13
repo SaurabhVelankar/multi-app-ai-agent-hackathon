@@ -1,0 +1,30 @@
+{
+  "calendar_id": "primary",
+  "timezone": "America/Los_Angeles",
+  "events": [
+    {
+      "id": "evt-riley-standup",
+      "summary": "Work standup",
+      "start": "2026-09-15T09:00:00-07:00",
+      "end": "2026-09-15T09:15:00-07:00",
+      "busy": true,
+      "source": "seed"
+    },
+    {
+      "id": "evt-riley-soccer",
+      "summary": "Soccer practice (kids)",
+      "start": "2026-09-16T16:30:00-07:00",
+      "end": "2026-09-16T17:30:00-07:00",
+      "busy": true,
+      "source": "seed"
+    },
+    {
+      "id": "evt-riley-clinic",
+      "summary": "Maya checkup",
+      "start": "2026-09-18T09:30:00-07:00",
+      "end": "2026-09-18T10:15:00-07:00",
+      "busy": true,
+      "source": "seed"
+    }
+  ]
+}

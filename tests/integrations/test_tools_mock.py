@@ -9,6 +9,8 @@ import pytest
 # Force mock before importing tools
 os.environ["LIFE_OS_USE_MOCK_CONNECTORS"] = "1"
 os.environ["LIFE_OS_HITL_AUTO"] = "approve"
+# Keep these tests on ephemeral mocks (sandbox has its own suite)
+os.environ["LIFE_OS_USE_SANDBOX"] = "0"
 
 from life_os import idempotency
 from life_os.agents.auditor import auditor_node

@@ -1,0 +1,37 @@
+{
+  "mailbox": "quinn@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-quinn-001",
+      "thread_id": "thread-quinn-001",
+      "label": "inbox",
+      "scenario": "task_follow_up",
+      "subject": "Action needed: renew domain by Friday",
+      "from": "it@example.com",
+      "to": [
+        "quinn@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T10:00:00Z",
+      "snippet": "lifeos.example expires Friday",
+      "body": "Quinn \u2014 the lifeos.example domain renews Friday. Please confirm payment in Notion and ping #ops in Slack when done. No meeting required.\n\n\u2014 IT"
+    },
+    {
+      "id": "msg-quinn-002",
+      "thread_id": "thread-quinn-002",
+      "label": "inbox",
+      "scenario": "task_follow_up",
+      "subject": "Please update the hiring tracker",
+      "from": "people@example.com",
+      "to": [
+        "quinn@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T07:30:00Z",
+      "snippet": "Add interview notes for two candidates",
+      "body": "Hi Quinn,\n\nCan you add interview notes for candidates A and B to the Notion hiring tracker today?\n\nPeople Ops"
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}

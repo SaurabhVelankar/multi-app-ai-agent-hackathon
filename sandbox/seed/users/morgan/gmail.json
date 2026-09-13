@@ -1,0 +1,52 @@
+{
+  "mailbox": "morgan@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-morgan-001",
+      "thread_id": "thread-morgan-001",
+      "label": "inbox",
+      "scenario": "not_a_meeting",
+      "subject": "September community newsletter",
+      "from": "hello@community.example",
+      "to": [
+        "morgan@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T08:00:00Z",
+      "snippet": "Events this month \u2014 FYI only",
+      "body": "Morgan \u2014 here's the September community newsletter. Lots of reading links. No RSVP required.\n\nUnsubscribe anytime."
+    },
+    {
+      "id": "msg-morgan-002",
+      "thread_id": "thread-morgan-002",
+      "label": "inbox",
+      "scenario": "not_a_meeting",
+      "subject": "Receipt for your order #99821",
+      "from": "orders@shop.example",
+      "to": [
+        "morgan@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-12T22:10:00Z",
+      "snippet": "Thanks for your purchase",
+      "body": "Thanks for your order #99821 ($64.20). Estimated delivery Sept 18. No action needed."
+    },
+    {
+      "id": "msg-morgan-003",
+      "thread_id": "thread-morgan-003",
+      "label": "inbox",
+      "scenario": "info_only_promo",
+      "subject": "Flash sale: 40% off weekends",
+      "from": "deals@promo.example",
+      "to": [
+        "morgan@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T14:00:00Z",
+      "snippet": "Promo ends Sunday",
+      "body": "Flash sale ends Sunday. Browse deals. This is marketing \u2014 ignore if not interested."
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}

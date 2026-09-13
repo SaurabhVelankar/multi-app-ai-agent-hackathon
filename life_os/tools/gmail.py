@@ -26,14 +26,17 @@ def draft_gmail_reply(
 
     if use_mock_connectors():
         if sandbox_enabled():
-            from life_os.sandbox import add_draft, resolve_user_id
+            from life_os.sandbox import add_draft, resolve_user_id, thread_reply_target
 
             user_id = resolve_user_id(admin_id=admin_id)
+            to_addr, subject = thread_reply_target(user_id, thread_id)
             draft = add_draft(
                 user_id,
                 run_id=run_id,
                 body=body,
                 thread_id=thread_id,
+                to=to_addr,
+                subject=subject,
             )
             draft_out: GmailDraft = {
                 "draft_id": draft["draft_id"],

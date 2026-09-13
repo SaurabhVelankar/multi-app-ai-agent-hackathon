@@ -9,6 +9,7 @@ type Props = {
   onSelect: (id: string) => void;
   onConnectGoogle: (adminId: string) => Promise<void>;
   onAdd: () => Promise<void>;
+  onOpenAllSandboxes?: () => void;
   busy: boolean;
 };
 
@@ -18,6 +19,7 @@ export function AdminRoster({
   onSelect,
   onConnectGoogle,
   onAdd,
+  onOpenAllSandboxes,
   busy,
 }: Props) {
   const admins = roster?.admins ?? [];
@@ -27,13 +29,26 @@ export function AdminRoster({
 
   return (
     <section className="panel compact">
-      <div className="panel-head">
-        <h2>Family roster</h2>
-        <p>
-          {roster
-            ? `${roster.family_id} · ${roster.hitl_policy} · ${admins.length}/${max}`
-            : "Loading roster…"}
-        </p>
+      <div className="panel-head row-between">
+        <div>
+          <h2>Family roster</h2>
+          <p>
+            {roster
+              ? `${roster.family_id} · ${roster.hitl_policy} · ${admins.length}/${max}`
+              : "Loading roster…"}
+          </p>
+        </div>
+        {onOpenAllSandboxes && (
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={busy || admins.length === 0}
+            onClick={onOpenAllSandboxes}
+            title="Open one sandbox mailbox window per admin"
+          >
+            Open all sandboxes
+          </button>
+        )}
       </div>
 
       <div className="admin-row">
@@ -64,16 +79,26 @@ export function AdminRoster({
             Google: {active.google_connected ? "connected" : "missing"}
             {active.email ? ` · ${active.email}` : ""}
           </div>
-          {!active.google_connected && (
-            <button
-              type="button"
+          <div className="sandbox-actions">
+            <a
               className="btn-ghost"
-              disabled={busy}
-              onClick={() => void onConnectGoogle(active.admin_id)}
+              href={`/sandbox/${encodeURIComponent(active.admin_id)}`}
+              target={`lifeos-sandbox-${active.admin_id}`}
+              rel="noopener noreferrer"
             >
-              Connect Google
-            </button>
-          )}
+              Open this sandbox
+            </a>
+            {!active.google_connected && (
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={busy}
+                onClick={() => void onConnectGoogle(active.admin_id)}
+              >
+                Connect Google
+              </button>
+            )}
+          </div>
         </div>
       )}
 

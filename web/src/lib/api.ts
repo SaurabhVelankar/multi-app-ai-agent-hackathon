@@ -8,20 +8,25 @@ import type {
   LifeState,
   OAuthStartResponse,
   OAuthStatus,
+  SandboxActionRequest,
+  SandboxActionResult,
+  SandboxWorldSnapshot,
 } from "./types";
 import {
   createMockRun,
   decideMockApproval,
   getMockRun,
+  getMockSandboxWorld,
   listMockAdmins,
   mockAddAdmin,
   mockOAuthStart,
   mockRemoveAdmin,
+  mockSandboxAction,
 } from "./mock";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:8000";
+  "http://localhost:8001";
 
 export function useMocks(): boolean {
   return process.env.NEXT_PUBLIC_USE_MOCKS === "true";
@@ -143,6 +148,23 @@ export async function approveRun(
 ): Promise<LifeState> {
   if (useMocks()) return decideMockApproval(runId, body);
   return request(`/runs/${encodeURIComponent(runId)}/approve`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function getSandboxWorld(
+  adminId: string,
+): Promise<SandboxWorldSnapshot> {
+  if (useMocks()) return getMockSandboxWorld(adminId);
+  return request(`/sandbox/admins/${encodeURIComponent(adminId)}`);
+}
+
+export async function postSandboxAction(
+  body: SandboxActionRequest,
+): Promise<SandboxActionResult> {
+  if (useMocks()) return mockSandboxAction(body);
+  return request("/sandbox/actions", {
     method: "POST",
     body: JSON.stringify(body),
   });

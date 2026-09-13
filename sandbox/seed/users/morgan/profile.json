@@ -1,0 +1,9 @@
+{
+  "user_id": "morgan",
+  "admin_id": "admin_05",
+  "display_name": "Morgan Patel",
+  "email": "morgan@lifeos.sandbox",
+  "timezone": "America/Los_Angeles",
+  "notion_parent_title": "Morgan Life OS",
+  "slack_channel": "#morgan-life-os"
+}

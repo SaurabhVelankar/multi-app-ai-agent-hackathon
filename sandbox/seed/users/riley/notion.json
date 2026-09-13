@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-riley-home",
+      "title": "Riley Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

@@ -54,6 +54,20 @@ class AddAdminRequest(BaseModel):
     slack_user_id: str | None = None
 
 
+class SandboxActionRequest(BaseModel):
+    """Cross-user sandbox action: email, calendar invite, or scheduled meeting."""
+
+    from_admin_id: str
+    to_admin_id: str
+    action: Literal["email", "calendar_invite", "schedule_meeting"]
+    subject: str | None = None
+    body: str | None = None
+    title: str | None = None
+    start: str | None = None
+    end: str | None = None
+    allow_conflict: bool = False
+
+
 # ---------- helpers ----------
 
 def _resolve_admin_id(admin_id: str | None) -> str:
@@ -244,6 +258,56 @@ def create_run(req: CreateRunRequest):
 
     state = _get_state(run_id)
     return CreateRunResponse(run_id=run_id, status=state.get("status", "running"))
+
+
+@app.get("/sandbox/admins/{admin_id}")
+def get_sandbox_world(admin_id: str) -> dict:
+    """Per-admin sandbox mailbox/calendar snapshot for cockpit demos."""
+    from life_os.sandbox import get_user_world, resolve_user_id, sandbox_enabled
+
+    _resolve_admin_id(admin_id)
+    if not sandbox_enabled():
+        raise HTTPException(
+            status_code=404,
+            detail="Sandbox disabled (set LIFE_OS_USE_SANDBOX=1 or use mock connectors)",
+        )
+    try:
+        user_id = resolve_user_id(admin_id=admin_id)
+        world = get_user_world(user_id)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    world["admin_id"] = admin_id
+    return world
+
+
+@app.post("/sandbox/actions")
+def post_sandbox_action(req: SandboxActionRequest) -> dict:
+    """Send email / calendar invite / schedule meeting between any two admins."""
+    from life_os.sandbox import cross_user_action, sandbox_enabled
+
+    _resolve_admin_id(req.from_admin_id)
+    _resolve_admin_id(req.to_admin_id)
+    if not sandbox_enabled():
+        raise HTTPException(
+            status_code=404,
+            detail="Sandbox disabled (set LIFE_OS_USE_SANDBOX=1 or use mock connectors)",
+        )
+    try:
+        return cross_user_action(
+            action=req.action,
+            from_admin_id=req.from_admin_id,
+            to_admin_id=req.to_admin_id,
+            subject=req.subject,
+            body=req.body,
+            title=req.title,
+            start=req.start,
+            end=req.end,
+            allow_conflict=req.allow_conflict,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/runs/{run_id}")

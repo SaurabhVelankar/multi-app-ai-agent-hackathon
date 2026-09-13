@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-taylor-home",
+      "title": "Taylor Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

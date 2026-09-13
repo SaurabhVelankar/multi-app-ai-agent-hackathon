@@ -1,0 +1,14 @@
+{
+  "calendar_id": "primary",
+  "timezone": "America/Los_Angeles",
+  "events": [
+    {
+      "id": "evt-morgan-read",
+      "summary": "Deep work \u2014 reading",
+      "start": "2026-09-15T10:00:00-07:00",
+      "end": "2026-09-15T12:00:00-07:00",
+      "busy": true,
+      "source": "seed"
+    }
+  ]
+}

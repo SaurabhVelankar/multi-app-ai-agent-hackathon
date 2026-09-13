@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-quinn-home",
+      "title": "Quinn Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

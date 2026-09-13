@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-sam-home",
+      "title": "Sam Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

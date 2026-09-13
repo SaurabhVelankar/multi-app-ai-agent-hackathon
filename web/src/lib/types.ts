@@ -122,6 +122,52 @@ export interface OAuthStatus {
   notion?: "connected" | "missing" | null;
 }
 
+/** Per-admin sandbox mailbox/calendar (GET /sandbox/admins/{admin_id}). */
+export interface SandboxWorldSnapshot {
+  user_id: string;
+  admin_id?: string | null;
+  display_name?: string | null;
+  email?: string | null;
+  mailbox?: string | null;
+  inbox: Record<string, unknown>[];
+  drafts: Record<string, unknown>[];
+  sent: Record<string, unknown>[];
+  calendar_events: Record<string, unknown>[];
+  notion_pages?: Record<string, unknown>[];
+  slack_messages?: Record<string, unknown>[];
+}
+
+export type SandboxActionType =
+  | "email"
+  | "calendar_invite"
+  | "schedule_meeting";
+
+export interface SandboxActionRequest {
+  from_admin_id: string;
+  to_admin_id: string;
+  action: SandboxActionType;
+  subject?: string;
+  body?: string;
+  title?: string;
+  start?: string;
+  end?: string;
+  allow_conflict?: boolean;
+}
+
+export interface SandboxActionResult {
+  ok: boolean;
+  action: SandboxActionType | string;
+  run_id?: string;
+  from_admin_id?: string;
+  to_admin_id?: string;
+  from_user_id?: string;
+  to_user_id?: string;
+  proposed_only?: boolean;
+  email?: Record<string, unknown>;
+  host_event?: Record<string, unknown>;
+  guest_event?: Record<string, unknown>;
+}
+
 export const PIPELINE_NODES = [
   "intake",
   "priority",

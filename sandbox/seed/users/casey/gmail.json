@@ -1,0 +1,41 @@
+{
+  "mailbox": "casey@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-casey-001",
+      "thread_id": "thread-casey-001",
+      "label": "inbox",
+      "scenario": "multi_attendee",
+      "subject": "All-hands prep with design + eng",
+      "from": "pm@example.com",
+      "to": [
+        "casey@lifeos.sandbox",
+        "alex@lifeos.sandbox",
+        "jordan@lifeos.sandbox"
+      ],
+      "cc": [
+        "sam@lifeos.sandbox"
+      ],
+      "date": "2026-09-13T13:20:00Z",
+      "snippet": "Need 60m with Alex, Jordan, Sam before Friday all-hands",
+      "body": "Casey \u2014 can you book 60 minutes with Alex, Jordan, and Sam before Friday's all-hands? Prefer Thursday afternoon. Drop a Notion brief for talking points.\n\n\u2014 PM"
+    },
+    {
+      "id": "msg-casey-002",
+      "thread_id": "thread-casey-002",
+      "label": "inbox",
+      "scenario": "meeting_ambiguous",
+      "subject": "sync?",
+      "from": "intern@example.com",
+      "to": [
+        "casey@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T15:05:00Z",
+      "snippet": "Do you have time this week?",
+      "body": "Hi Casey \u2014 do you have time this week? Wanted to ask a few onboarding questions. Whenever works.\n\nThanks!"
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}

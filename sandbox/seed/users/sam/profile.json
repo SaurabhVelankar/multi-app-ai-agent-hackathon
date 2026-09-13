@@ -1,0 +1,9 @@
+{
+  "user_id": "sam",
+  "admin_id": "admin_03",
+  "display_name": "Sam Rivera",
+  "email": "sam@lifeos.sandbox",
+  "timezone": "America/Los_Angeles",
+  "notion_parent_title": "Sam Life OS",
+  "slack_channel": "#sam-life-os"
+}

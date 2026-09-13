@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminRoster, roleOf } from "@/components/AdminRoster";
+import { CrossUserActions } from "@/components/CrossUserActions";
 import { HitlPanel } from "@/components/HitlPanel";
 import { Receipts } from "@/components/Receipts";
+import { SandboxWorld, openSandboxWindows } from "@/components/SandboxWorld";
 import { StatusPill } from "@/components/StatusPill";
 import { Timeline } from "@/components/Timeline";
 import { TriggerPanel } from "@/components/TriggerPanel";
@@ -32,6 +34,7 @@ export function Cockpit() {
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const [apiOk, setApiOk] = useState<boolean | null>(null);
+  const [actionTick, setActionTick] = useState(0);
 
   const mocks = useMocks();
   const activeRole = useMemo(
@@ -174,6 +177,16 @@ export function Cockpit() {
     }
   }
 
+  function handleOpenAllSandboxes() {
+    const ids = (roster?.admins ?? []).map((a) => a.admin_id);
+    const n = openSandboxWindows(ids);
+    setBanner(
+      n === 0
+        ? "Browser blocked popups — allow popups for localhost, then click Open all sandboxes again."
+        : `Opened ${n} sandbox window${n === 1 ? "" : "s"} (one per admin).`,
+    );
+  }
+
   return (
     <div className="shell">
       <header className="hero">
@@ -218,7 +231,7 @@ export function Cockpit() {
       {!mocks && apiOk === false && (
         <div className="banner warn">
           Backend not reachable at {getApiBase()}. Start{" "}
-          <span className="mono">uvicorn life_os.api:app --reload --port 8000</span>{" "}
+          <span className="mono">uvicorn life_os.api:app --reload --port 8001</span>{" "}
           or set <span className="mono">NEXT_PUBLIC_USE_MOCKS=true</span> in{" "}
           <span className="mono">web/.env.local</span>.
         </div>
@@ -232,12 +245,19 @@ export function Cockpit() {
             onSelect={setAdminId}
             onConnectGoogle={handleConnectGoogle}
             onAdd={handleAddAdmin}
+            onOpenAllSandboxes={handleOpenAllSandboxes}
             busy={busy}
           />
           <TriggerPanel
             adminId={adminId}
             busy={busy}
             onSubmit={handleStart}
+          />
+          <CrossUserActions
+            roster={roster}
+            fromAdminId={adminId}
+            busy={busy}
+            onDone={() => setActionTick((n) => n + 1)}
           />
           <HitlPanel
             state={state}
@@ -250,6 +270,10 @@ export function Cockpit() {
         <div className="col">
           <Timeline state={state} />
           <Receipts state={state} />
+          <SandboxWorld
+            adminId={adminId}
+            refreshKey={`${state?.run_id || ""}:${state?.status || ""}:${state?.audit_ref || ""}:${actionTick}`}
+          />
         </div>
       </div>
     </div>

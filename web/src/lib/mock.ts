@@ -7,10 +7,36 @@ import type {
   CreateRunResponse,
   LifeState,
   OAuthStartResponse,
+  SandboxActionRequest,
+  SandboxActionResult,
+  SandboxWorldSnapshot,
 } from "./types";
 import { canApprove, canManageRoster } from "./types";
 
 const store = new Map<string, LifeState>();
+
+type MockBox = {
+  drafts: Record<string, unknown>[];
+  sent: Record<string, unknown>[];
+  inbox: Record<string, unknown>[];
+  calendar_events: Record<string, unknown>[];
+};
+
+const mockWorlds = new Map<string, MockBox>();
+
+function ensureBox(adminId: string): MockBox {
+  let box = mockWorlds.get(adminId);
+  if (!box) {
+    box = { drafts: [], sent: [], inbox: [], calendar_events: [] };
+    mockWorlds.set(adminId, box);
+  }
+  return box;
+}
+
+const MOCK_USER_BY_ADMIN: Record<string, string> = {
+  admin_01: "alex",
+  admin_02: "jordan",
+};
 
 const mockRoster: AdminListResponse = {
   family_id: "hauns",
@@ -191,7 +217,10 @@ export function createMockRun(body: CreateRunRequest): CreateRunResponse {
     drafts: [
       {
         id: "mock-draft-1",
-        to: "sarah@example.com",
+        // Address another family admin so approve → visible in their Sandbox mailbox
+        to:
+          mockRoster.admins.find((a) => a.admin_id !== requester)?.email ||
+          "parent-b@example.com",
         subject: "Re: meeting",
         body: "Happy to meet — I've held a slot and dropped a brief in Notion.",
       },
@@ -242,6 +271,27 @@ export function createMockRun(body: CreateRunRequest): CreateRunResponse {
   };
 
   store.set(runId, state);
+
+  const box = ensureBox(requester);
+  if (!box.drafts.some((d) => d.draft_id === "mock-draft-1")) {
+    const d = state.drafts![0];
+    box.drafts.push({
+      draft_id: "mock-draft-1",
+      to: d.to,
+      subject: d.subject,
+      body: d.body,
+      run_id: runId,
+    });
+  }
+  if (box.calendar_events.length === 0) {
+    box.calendar_events.push({
+      id: "mock-cal-1",
+      summary: "Life OS meeting block",
+      start: "2026-09-15T14:00:00-07:00",
+      end: "2026-09-15T14:30:00-07:00",
+    });
+  }
+
   return { run_id: runId, status: "needs_approval" };
 }
 
@@ -303,5 +353,155 @@ export function decideMockApproval(
   };
 
   store.set(runId, next);
+
+  // Mirror approve → sandbox sent + optional cross-user delivery for UI demos
+  if (approved) {
+    const requester = state.admin_id || "admin_01";
+    const box = ensureBox(requester);
+    const draft = box.drafts.find((d) => d.draft_id === "mock-draft-1");
+    box.drafts = box.drafts.filter((d) => d.draft_id !== "mock-draft-1");
+    const to = String(draft?.to || "sarah@example.com");
+    const bodyText = String(
+      draft?.body || "Happy to meet — I've held a slot and dropped a brief in Notion.",
+    );
+    const sent: Record<string, unknown> = {
+      sent_id: `mock-sent-${runId.slice(-6)}`,
+      to,
+      subject: String(draft?.subject || "Re: meeting"),
+      body: bodyText,
+      run_id: runId,
+    };
+    // Deliver into another mock admin inbox when `to` matches roster email
+    const recipient = mockRoster.admins.find(
+      (a) => (a.email || "").toLowerCase() === to.toLowerCase(),
+    );
+    if (recipient && recipient.admin_id !== requester) {
+      sent.delivered_to_user_id =
+        MOCK_USER_BY_ADMIN[recipient.admin_id] || recipient.admin_id;
+      const rbox = ensureBox(recipient.admin_id);
+      rbox.inbox.push({
+        id: `mock-in-${runId.slice(-6)}`,
+        from: findAdmin(requester)?.email || "me@example.com",
+        to: [to],
+        subject: sent.subject,
+        body: bodyText,
+        via_sandbox_send: true,
+        run_id: runId,
+      });
+    }
+    box.sent.push(sent);
+  }
+
   return next;
 }
+
+export function getMockSandboxWorld(adminId: string): SandboxWorldSnapshot {
+  const admin = findAdmin(adminId);
+  if (!admin) throw new Error("404: Unknown admin_id");
+  const box = ensureBox(adminId);
+  return {
+    user_id: MOCK_USER_BY_ADMIN[adminId] || adminId,
+    admin_id: adminId,
+    display_name: admin.name,
+    email: admin.email || undefined,
+    mailbox: admin.email || undefined,
+    inbox: box.inbox,
+    drafts: box.drafts,
+    sent: box.sent,
+    calendar_events: box.calendar_events,
+    notion_pages: [],
+    slack_messages: [],
+  };
+}
+
+export function mockSandboxAction(
+  body: SandboxActionRequest,
+): SandboxActionResult {
+  const from = findAdmin(body.from_admin_id);
+  const to = findAdmin(body.to_admin_id);
+  if (!from || !to) throw new Error("404: Unknown admin_id");
+  if (body.from_admin_id === body.to_admin_id) {
+    throw new Error("400: from and to must be different users");
+  }
+
+  const runId = `manual-${Math.random().toString(36).slice(2, 10)}`;
+  const fromBox = ensureBox(body.from_admin_id);
+  const toBox = ensureBox(body.to_admin_id);
+  const fromEmail = from.email || "me@example.com";
+  const toEmail = to.email || "them@example.com";
+  const title = body.title || body.subject || "Life OS sync";
+  const start = body.start || "2026-09-16T15:00:00-07:00";
+  const end = body.end || "2026-09-16T15:30:00-07:00";
+
+  const email: Record<string, unknown> = {
+    sent_id: `mock-sent-${runId.slice(-6)}`,
+    to: toEmail,
+    subject:
+      body.subject ||
+      (body.action === "email" ? "Quick note" : `Invite: ${title}`),
+    body: body.body || `Hello from ${from.name}`,
+    run_id: runId,
+    delivered_to_user_id:
+      MOCK_USER_BY_ADMIN[body.to_admin_id] || body.to_admin_id,
+  };
+  fromBox.sent.push(email);
+  toBox.inbox.push({
+    id: `mock-in-${runId.slice(-6)}`,
+    from: fromEmail,
+    to: [toEmail],
+    subject: email.subject,
+    body: email.body,
+    via_sandbox_send: true,
+    run_id: runId,
+  });
+
+  if (body.action === "email") {
+    return {
+      ok: true,
+      action: "email",
+      run_id: runId,
+      from_admin_id: body.from_admin_id,
+      to_admin_id: body.to_admin_id,
+      from_user_id: MOCK_USER_BY_ADMIN[body.from_admin_id] || body.from_admin_id,
+      to_user_id: MOCK_USER_BY_ADMIN[body.to_admin_id] || body.to_admin_id,
+      email,
+    };
+  }
+
+  const host = {
+    id: `mock-cal-host-${runId.slice(-6)}`,
+    summary: title,
+    start,
+    end,
+    proposed_only: false,
+    attendees: [toEmail],
+  };
+  const guest = {
+    id: `mock-cal-guest-${runId.slice(-6)}`,
+    summary:
+      body.action === "calendar_invite"
+        ? `${title} (invite from ${from.name})`
+        : title,
+    start,
+    end,
+    proposed_only: false,
+    attendees: [fromEmail],
+  };
+  fromBox.calendar_events.push(host);
+  toBox.calendar_events.push(guest);
+
+  return {
+    ok: true,
+    action: body.action,
+    run_id: runId,
+    from_admin_id: body.from_admin_id,
+    to_admin_id: body.to_admin_id,
+    from_user_id: MOCK_USER_BY_ADMIN[body.from_admin_id] || body.from_admin_id,
+    to_user_id: MOCK_USER_BY_ADMIN[body.to_admin_id] || body.to_admin_id,
+    email,
+    host_event: host,
+    guest_event: guest,
+    proposed_only: false,
+  };
+}
+

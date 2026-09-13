@@ -1,21 +1,107 @@
 {
   "version": 1,
   "timezone": "America/Los_Angeles",
-  "description": "Shared Life OS connector sandbox — deterministic per-user Gmail/Calendar worlds",
+  "description": "Shared Life OS connector sandbox \u2014 deterministic per-user Gmail/Calendar worlds (10 family admins)",
   "users": [
     {
       "user_id": "alex",
       "admin_id": "admin_01",
-      "admin_id_aliases": ["admin-1", "admin_1"],
+      "admin_id_aliases": [
+        "admin-1",
+        "admin_1"
+      ],
       "display_name": "Alex Chen",
       "email": "alex@lifeos.sandbox"
     },
     {
       "user_id": "jordan",
       "admin_id": "admin_02",
-      "admin_id_aliases": ["admin-2", "admin_2"],
+      "admin_id_aliases": [
+        "admin-2",
+        "admin_2"
+      ],
       "display_name": "Jordan Lee",
       "email": "jordan@lifeos.sandbox"
+    },
+    {
+      "user_id": "sam",
+      "admin_id": "admin_03",
+      "admin_id_aliases": [
+        "admin-3",
+        "admin_3"
+      ],
+      "display_name": "Sam Rivera",
+      "email": "sam@lifeos.sandbox"
+    },
+    {
+      "user_id": "riley",
+      "admin_id": "admin_04",
+      "admin_id_aliases": [
+        "admin-4",
+        "admin_4"
+      ],
+      "display_name": "Riley Nguyen",
+      "email": "riley@lifeos.sandbox"
+    },
+    {
+      "user_id": "morgan",
+      "admin_id": "admin_05",
+      "admin_id_aliases": [
+        "admin-5",
+        "admin_5"
+      ],
+      "display_name": "Morgan Patel",
+      "email": "morgan@lifeos.sandbox"
+    },
+    {
+      "user_id": "casey",
+      "admin_id": "admin_06",
+      "admin_id_aliases": [
+        "admin-6",
+        "admin_6"
+      ],
+      "display_name": "Casey Brooks",
+      "email": "casey@lifeos.sandbox"
+    },
+    {
+      "user_id": "avery",
+      "admin_id": "admin_07",
+      "admin_id_aliases": [
+        "admin-7",
+        "admin_7"
+      ],
+      "display_name": "Avery Kim",
+      "email": "avery@lifeos.sandbox"
+    },
+    {
+      "user_id": "quinn",
+      "admin_id": "admin_08",
+      "admin_id_aliases": [
+        "admin-8",
+        "admin_8"
+      ],
+      "display_name": "Quinn Morales",
+      "email": "quinn@lifeos.sandbox"
+    },
+    {
+      "user_id": "cameron",
+      "admin_id": "admin_09",
+      "admin_id_aliases": [
+        "admin-9",
+        "admin_9"
+      ],
+      "display_name": "Cameron Diaz-Wright",
+      "email": "cameron@lifeos.sandbox"
+    },
+    {
+      "user_id": "taylor",
+      "admin_id": "admin_10",
+      "admin_id_aliases": [
+        "admin-10",
+        "admin_10"
+      ],
+      "display_name": "Taylor Okonkwo",
+      "email": "taylor@lifeos.sandbox"
     }
   ],
   "scenarios": [
@@ -42,6 +128,54 @@
       "user_id": "jordan",
       "gmail_message_id": "msg-jordan-001",
       "expect": "detect_busy_or_propose_alternate"
+    },
+    {
+      "id": "irreversible_send",
+      "user_id": "sam",
+      "gmail_message_id": "msg-sam-001",
+      "expect": "needs_hitl_before_send"
+    },
+    {
+      "id": "family_school",
+      "user_id": "riley",
+      "gmail_message_id": "msg-riley-001",
+      "expect": "calendar_family_block"
+    },
+    {
+      "id": "info_only_promo",
+      "user_id": "morgan",
+      "gmail_message_id": "msg-morgan-003",
+      "expect": "no_calendar_create"
+    },
+    {
+      "id": "multi_attendee",
+      "user_id": "casey",
+      "gmail_message_id": "msg-casey-001",
+      "expect": "propose_or_hitl_busy_thu"
+    },
+    {
+      "id": "travel_timezone",
+      "user_id": "avery",
+      "gmail_message_id": "msg-avery-001",
+      "expect": "schedule_in_local_tz"
+    },
+    {
+      "id": "task_follow_up",
+      "user_id": "quinn",
+      "gmail_message_id": "msg-quinn-001",
+      "expect": "notion_slack_no_meeting"
+    },
+    {
+      "id": "cold_start_meeting",
+      "user_id": "cameron",
+      "gmail_message_id": "msg-cameron-001",
+      "expect": "create_onboarding_event"
+    },
+    {
+      "id": "double_book_risk",
+      "user_id": "taylor",
+      "gmail_message_id": "msg-taylor-001",
+      "expect": "detect_conflict_propose_alternate"
     }
   ]
 }

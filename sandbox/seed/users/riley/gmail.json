@@ -1,0 +1,37 @@
+{
+  "mailbox": "riley@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-riley-001",
+      "thread_id": "thread-riley-001",
+      "label": "inbox",
+      "scenario": "family_school",
+      "subject": "School pickup swap Wednesday?",
+      "from": "partner@family.example",
+      "to": [
+        "riley@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-13T06:45:00Z",
+      "snippet": "Can you do pickup at 3:15 on Wednesday?",
+      "body": "Hey Riley \u2014 can you take school pickup Wednesday at 3:15pm? I have a late client. Put it on the family calendar if yes.\n\nLove you"
+    },
+    {
+      "id": "msg-riley-002",
+      "thread_id": "thread-riley-002",
+      "label": "inbox",
+      "scenario": "meeting_clear",
+      "subject": "Pediatric checkup confirmation",
+      "from": "frontdesk@clinic.example",
+      "to": [
+        "riley@lifeos.sandbox"
+      ],
+      "cc": [],
+      "date": "2026-09-12T20:00:00Z",
+      "snippet": "Confirming Friday 9:30am appointment",
+      "body": "Hello Riley,\n\nThis confirms Maya's checkup Friday at 9:30am. Reply if you need to reschedule.\n\nClinic Front Desk"
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}
