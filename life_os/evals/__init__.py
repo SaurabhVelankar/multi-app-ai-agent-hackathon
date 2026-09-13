@@ -119,14 +119,20 @@ def run_eval(
     planner_s = json.dumps(planner_json)
 
     g = build_graph()
+
+    def _mk(content: str):
+        def factory(*, temperature: float = 0.2):
+            mock = MagicMock()
+            mock.invoke = lambda msgs, **kw: _ai(content)
+            return mock
+
+        return factory
+
     with (
-        patch("life_os.agents.intake.ChatAnthropic") as mock_i,
-        patch("life_os.agents.priority.ChatAnthropic") as mock_p,
-        patch("life_os.agents.planner.ChatAnthropic") as mock_pl,
+        patch("life_os.agents.intake.get_chat_model", side_effect=_mk(intake_s)),
+        patch("life_os.agents.priority.get_chat_model", side_effect=_mk(priority_s)),
+        patch("life_os.agents.planner.get_chat_model", side_effect=_mk(planner_s)),
     ):
-        mock_i.return_value.invoke = lambda msgs, **kw: _ai(intake_s)
-        mock_p.return_value.invoke = lambda msgs, **kw: _ai(priority_s)
-        mock_pl.return_value.invoke = lambda msgs, **kw: _ai(planner_s)
         result = g.invoke(state, config=config)
 
     # LangGraph may return state dict directly

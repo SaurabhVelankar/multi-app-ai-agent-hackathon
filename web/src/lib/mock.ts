@@ -1,19 +1,114 @@
 import type {
+  AddAdminRequest,
+  Admin,
+  AdminListResponse,
   ApproveRequest,
   CreateRunRequest,
   CreateRunResponse,
   LifeState,
+  OAuthStartResponse,
 } from "./types";
+import { canApprove, canManageRoster } from "./types";
 
 const store = new Map<string, LifeState>();
+
+const mockRoster: AdminListResponse = {
+  family_id: "hauns",
+  hitl_policy: "any_of",
+  admin_max: 10,
+  admins: [
+    {
+      admin_id: "admin_01",
+      name: "Parent A",
+      role: "owner",
+      email: "parent-a@example.com",
+      google_connected: true,
+      google_token_path: ".oauth/admin_01_google.json",
+    },
+    {
+      admin_id: "admin_02",
+      name: "Parent B",
+      role: "operator",
+      email: "parent-b@example.com",
+      google_connected: false,
+      google_token_path: ".oauth/admin_02_google.json",
+    },
+  ],
+};
 
 function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function findAdmin(adminId: string): Admin | undefined {
+  return mockRoster.admins.find((a) => a.admin_id === adminId);
+}
+
+export function listMockAdmins(): AdminListResponse {
+  return {
+    ...mockRoster,
+    admins: mockRoster.admins.map((a) => ({ ...a })),
+  };
+}
+
+export function mockAddAdmin(body: AddAdminRequest): Admin {
+  const actor = findAdmin(body.acting_admin_id);
+  if (!canManageRoster(actor?.role)) {
+    throw new Error("403: Only owner can add admins");
+  }
+  if (mockRoster.admins.length >= mockRoster.admin_max) {
+    throw new Error(`400: Admin roster full (max ${mockRoster.admin_max})`);
+  }
+  if (findAdmin(body.admin_id)) {
+    throw new Error("400: admin_id already exists");
+  }
+  const admin: Admin = {
+    admin_id: body.admin_id,
+    name: body.name,
+    role: body.role,
+    email: body.email ?? null,
+    slack_user_id: body.slack_user_id ?? null,
+    google_token_path: `.oauth/${body.admin_id}_google.json`,
+    google_connected: false,
+  };
+  mockRoster.admins.push(admin);
+  return { ...admin };
+}
+
+export function mockRemoveAdmin(
+  adminId: string,
+  actingAdminId: string,
+): { ok: boolean; removed: string } {
+  const actor = findAdmin(actingAdminId);
+  if (!canManageRoster(actor?.role)) {
+    throw new Error("403: Only owner can remove admins");
+  }
+  const target = findAdmin(adminId);
+  if (!target) throw new Error("404: Admin not found");
+  if (target.role === "owner") {
+    const owners = mockRoster.admins.filter((a) => a.role === "owner");
+    if (owners.length <= 1) {
+      throw new Error("400: Cannot remove last owner");
+    }
+  }
+  mockRoster.admins = mockRoster.admins.filter((a) => a.admin_id !== adminId);
+  return { ok: true, removed: adminId };
+}
+
+export function mockOAuthStart(adminId: string): OAuthStartResponse {
+  if (!findAdmin(adminId)) throw new Error("404: Unknown admin_id");
+  const a = findAdmin(adminId)!;
+  a.google_connected = true;
+  return {
+    admin_id: adminId,
+    auth_url: `https://accounts.google.com/o/oauth2/auth#mock-${adminId}`,
+  };
+}
+
 export function createMockRun(body: CreateRunRequest): CreateRunResponse {
   const runId = uid("run");
   const now = new Date().toISOString();
+  const requester = body.admin_id ?? "admin_01";
 
   const summary =
     typeof body.trigger_payload === "string"
@@ -27,7 +122,10 @@ export function createMockRun(body: CreateRunRequest): CreateRunResponse {
     run_id: runId,
     thread_id: runId,
     created_at: now,
-    admin_id: body.admin_id ?? null,
+    family_id: mockRoster.family_id,
+    admin_id: requester,
+    shared_with: mockRoster.admins.map((a) => a.admin_id),
+    approval_assignee: null,
     trigger: {
       type: body.trigger_type,
       raw: body.trigger_payload,
@@ -161,14 +259,21 @@ export function decideMockApproval(
     throw new Error("409: Run not in needs_approval state");
   }
 
+  const actor = findAdmin(body.admin_id);
+  if (!actor || !canApprove(actor.role)) {
+    throw new Error("403: Admin cannot approve (unknown or viewer role)");
+  }
+
   const approved = body.decision === "approve";
+  // Preserve requester admin_id (token owner); record who approved separately
   const next: LifeState = {
     ...state,
-    admin_id: body.admin_id,
+    approval_assignee: body.admin_id,
     needs_approval: false,
     status: approved ? "pass" : "abort",
     approvals: {
       ...(state.approvals || {}),
+      [`hitl:${runId}`]: approved ? "approved" : "rejected",
       "email_send:mock-draft-1": approved ? "approved" : "rejected",
     },
     plan_steps: (state.plan_steps || []).map((s) =>

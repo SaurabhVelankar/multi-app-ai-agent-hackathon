@@ -92,10 +92,20 @@ def test_stub_run_reaches_pass():
         call_count[0] += 1
         return resp
 
-    with patch("life_os.llm.get_chat_model") as mock_get:
-        mock_llm = MagicMock()
-        mock_llm.invoke = fake_invoke
-        mock_get.return_value = mock_llm
+    with (
+        patch("life_os.agents.intake.get_chat_model") as mock_i,
+        patch("life_os.agents.priority.get_chat_model") as mock_p,
+        patch("life_os.agents.planner.get_chat_model") as mock_pl,
+    ):
+        mock_llm_i = MagicMock()
+        mock_llm_i.invoke = lambda msgs, **kw: _make_llm_response(intake_resp)
+        mock_llm_p = MagicMock()
+        mock_llm_p.invoke = lambda msgs, **kw: _make_llm_response(priority_resp)
+        mock_llm_pl = MagicMock()
+        mock_llm_pl.invoke = lambda msgs, **kw: _make_llm_response(planner_resp)
+        mock_i.return_value = mock_llm_i
+        mock_p.return_value = mock_llm_p
+        mock_pl.return_value = mock_llm_pl
 
         result = g.invoke(state, config=config)
 

@@ -11,6 +11,8 @@ export type IntentType = "meeting" | "task" | "follow_up" | "info";
 
 export type StepStatus = "pending" | "done" | "skipped" | "blocked";
 
+export type AdminRole = "owner" | "operator" | "viewer";
+
 export interface TriggerDict {
   type?: TriggerType;
   raw?: string | Record<string, unknown>;
@@ -34,11 +36,16 @@ export interface PlanStepDict {
   status?: StepStatus;
 }
 
+/** Matches shared-LifeOS LifeState (contracts/openapi.yaml). */
 export interface LifeState {
   run_id?: string;
   thread_id?: string;
   created_at?: string;
+  family_id?: string | null;
+  /** Requester — connector writes use this admin's OAuth tokens. */
   admin_id?: string | null;
+  shared_with?: string[];
+  approval_assignee?: string | null;
   trigger?: TriggerDict;
   normalized_context?: Record<string, unknown>;
   intents?: IntentDict[];
@@ -74,6 +81,47 @@ export interface ApproveRequest {
   admin_id: string;
 }
 
+export interface Admin {
+  admin_id: string;
+  name: string;
+  role: AdminRole;
+  email?: string | null;
+  slack_user_id?: string | null;
+  google_token_path?: string;
+  google_connected?: boolean;
+}
+
+export interface AdminListResponse {
+  family_id: string;
+  hitl_policy: string;
+  admin_max: number;
+  admins: Admin[];
+}
+
+export interface AddAdminRequest {
+  acting_admin_id: string;
+  admin_id: string;
+  name: string;
+  role: AdminRole;
+  email?: string | null;
+  slack_user_id?: string | null;
+}
+
+export interface OAuthStartResponse {
+  admin_id: string;
+  auth_url: string;
+}
+
+export interface OAuthStatus {
+  admin_id: string;
+  google?: "connected" | "missing";
+  connected?: boolean;
+  token_path?: string;
+  email?: string | null;
+  mock_mode?: boolean;
+  notion?: "connected" | "missing" | null;
+}
+
 export const PIPELINE_NODES = [
   "intake",
   "priority",
@@ -86,3 +134,11 @@ export const PIPELINE_NODES = [
 ] as const;
 
 export type PipelineNode = (typeof PIPELINE_NODES)[number];
+
+export function canApprove(role: AdminRole | undefined): boolean {
+  return role === "owner" || role === "operator";
+}
+
+export function canManageRoster(role: AdminRole | undefined): boolean {
+  return role === "owner";
+}

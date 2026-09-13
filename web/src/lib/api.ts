@@ -1,10 +1,23 @@
 import type {
+  AddAdminRequest,
+  Admin,
+  AdminListResponse,
   ApproveRequest,
   CreateRunRequest,
   CreateRunResponse,
   LifeState,
+  OAuthStartResponse,
+  OAuthStatus,
 } from "./types";
-import { createMockRun, decideMockApproval, getMockRun } from "./mock";
+import {
+  createMockRun,
+  decideMockApproval,
+  getMockRun,
+  listMockAdmins,
+  mockAddAdmin,
+  mockOAuthStart,
+  mockRemoveAdmin,
+} from "./mock";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
@@ -41,12 +54,61 @@ async function request<T>(
     throw new Error(`${res.status}: ${detail}`);
   }
 
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
 export async function healthCheck(): Promise<{ status: string }> {
   if (useMocks()) return { status: "ok-mock" };
   return request("/health");
+}
+
+export async function listAdmins(): Promise<AdminListResponse> {
+  if (useMocks()) return listMockAdmins();
+  return request("/admins");
+}
+
+export async function addAdmin(body: AddAdminRequest): Promise<Admin> {
+  if (useMocks()) return mockAddAdmin(body);
+  return request("/admins", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function removeAdmin(
+  adminId: string,
+  actingAdminId: string,
+): Promise<{ ok: boolean; removed: string }> {
+  if (useMocks()) return mockRemoveAdmin(adminId, actingAdminId);
+  const q = `?acting_admin_id=${encodeURIComponent(actingAdminId)}`;
+  return request(`/admins/${encodeURIComponent(adminId)}${q}`, {
+    method: "DELETE",
+  });
+}
+
+export async function startGoogleOAuth(
+  adminId: string,
+): Promise<OAuthStartResponse> {
+  if (useMocks()) return mockOAuthStart(adminId);
+  return request(
+    `/admins/${encodeURIComponent(adminId)}/oauth/google/start`,
+  );
+}
+
+export async function getOAuthStatus(adminId: string): Promise<OAuthStatus> {
+  if (useMocks()) {
+    const roster = listMockAdmins();
+    const a = roster.admins.find((x) => x.admin_id === adminId);
+    return {
+      admin_id: adminId,
+      google: a?.google_connected ? "connected" : "missing",
+      connected: Boolean(a?.google_connected),
+      mock_mode: true,
+      notion: "missing",
+    };
+  }
+  return request(`/admins/${encodeURIComponent(adminId)}/oauth/status`);
 }
 
 export async function createRun(
@@ -59,13 +121,20 @@ export async function createRun(
   });
 }
 
-export async function getRun(runId: string): Promise<LifeState> {
+export async function getRun(
+  runId: string,
+  adminId?: string | null,
+): Promise<LifeState> {
   if (useMocks()) {
     const state = getMockRun(runId);
     if (!state) throw new Error("404: Run not found");
     return state;
   }
-  return request(`/runs/${encodeURIComponent(runId)}`);
+  const q =
+    adminId && adminId.trim()
+      ? `?admin_id=${encodeURIComponent(adminId.trim())}`
+      : "";
+  return request(`/runs/${encodeURIComponent(runId)}${q}`);
 }
 
 export async function approveRun(

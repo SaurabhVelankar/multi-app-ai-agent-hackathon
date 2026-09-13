@@ -1,13 +1,15 @@
-"""FastAPI surface — POST /runs, GET /runs/{id}, POST /runs/{id}/approve, GET /health."""
+"""FastAPI surface — runs, approve, admins, per-admin Google OAuth."""
 import datetime
 import uuid
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
-from life_os.config import ADMIN_MAX
+from life_os.adapters import google_auth
+from life_os.admins import get_roster, notion_token_for
 from life_os.graph import graph
 from life_os.state import LifeState
 
@@ -20,11 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory admin roster (Tier 0) — maps admin_id -> registered_at
-_admin_roster: dict[str, str] = {}
-
-# Idempotency map: source_id -> run_id
-_source_to_run: dict[str, str] = {}
+# Idempotency map: (admin_id, source_id) -> run_id
+_source_to_run: dict[tuple[str, str], str] = {}
 
 
 # ---------- request / response models ----------
@@ -46,15 +45,26 @@ class ApproveRequest(BaseModel):
     admin_id: str
 
 
+class AddAdminRequest(BaseModel):
+    acting_admin_id: str
+    admin_id: str
+    name: str
+    role: Literal["owner", "operator", "viewer"]
+    email: str | None = None
+    slack_user_id: str | None = None
+
+
 # ---------- helpers ----------
 
-def _register_admin(admin_id: str | None) -> str | None:
+def _resolve_admin_id(admin_id: str | None) -> str:
+    roster = get_roster()
     if admin_id is None:
-        return None
-    if admin_id not in _admin_roster:
-        if len(_admin_roster) >= ADMIN_MAX:
-            raise HTTPException(status_code=400, detail=f"Admin roster full (max {ADMIN_MAX})")
-        _admin_roster[admin_id] = datetime.datetime.utcnow().isoformat() + "Z"
+        owner = roster.owner()
+        if owner is None:
+            raise HTTPException(status_code=400, detail="No admins configured")
+        return owner.admin_id
+    if roster.get(admin_id) is None:
+        raise HTTPException(status_code=403, detail=f"Unknown admin_id: {admin_id}")
     return admin_id
 
 
@@ -66,6 +76,21 @@ def _get_state(run_id: str) -> dict:
     return dict(snapshot.values)
 
 
+def _admin_public(admin_id: str) -> dict:
+    roster = get_roster()
+    admin = roster.require(admin_id)
+    status = google_auth.oauth_status(admin_id)
+    return {
+        "admin_id": admin.admin_id,
+        "name": admin.name,
+        "role": admin.role,
+        "email": admin.email,
+        "slack_user_id": admin.slack_user_id,
+        "google_token_path": admin.google_token_path,
+        "google_connected": status["connected"],
+    }
+
+
 # ---------- routes ----------
 
 @app.get("/health")
@@ -73,25 +98,125 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/admins")
+def list_admins():
+    roster = get_roster()
+    return {
+        "family_id": roster.family_id,
+        "hitl_policy": roster.hitl_policy,
+        "admin_max": roster.admin_max,
+        "admins": [_admin_public(a.admin_id) for a in roster.list_admins()],
+    }
+
+
+@app.post("/admins")
+def add_admin(req: AddAdminRequest):
+    """Runtime add — in-memory only until process restart (env remains source of truth)."""
+    roster = get_roster()
+    if not roster.can_manage_roster(req.acting_admin_id):
+        raise HTTPException(status_code=403, detail="Only owner can add admins")
+    if len(roster.admins) >= roster.admin_max:
+        raise HTTPException(
+            status_code=400, detail=f"Admin roster full (max {roster.admin_max})"
+        )
+    if req.admin_id in roster.admins:
+        raise HTTPException(status_code=400, detail="admin_id already exists")
+    from life_os.admins import Admin
+
+    roster.admins[req.admin_id] = Admin(
+        admin_id=req.admin_id,
+        name=req.name,
+        role=req.role,
+        email=req.email,
+        slack_user_id=req.slack_user_id,
+        google_token_path=f".oauth/{req.admin_id}_google.json",
+    )
+    return _admin_public(req.admin_id)
+
+
+@app.delete("/admins/{admin_id}")
+def remove_admin(admin_id: str, acting_admin_id: str = Query(...)):
+    roster = get_roster()
+    if not roster.can_manage_roster(acting_admin_id):
+        raise HTTPException(status_code=403, detail="Only owner can remove admins")
+    target = roster.get(admin_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    if target.role == "owner":
+        owners = [a for a in roster.list_admins() if a.role == "owner"]
+        if len(owners) <= 1:
+            raise HTTPException(status_code=400, detail="Cannot remove last owner")
+    del roster.admins[admin_id]
+    return {"ok": True, "removed": admin_id}
+
+
+@app.get("/admins/{admin_id}/oauth/google/start")
+def start_google_oauth(admin_id: str, redirect: bool = False):
+    roster = get_roster()
+    if roster.get(admin_id) is None:
+        raise HTTPException(status_code=404, detail="Unknown admin_id")
+    try:
+        auth_url = google_auth.build_auth_url(admin_id)
+    except google_auth.GoogleAuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if redirect:
+        return RedirectResponse(auth_url)
+    return {"admin_id": admin_id, "auth_url": auth_url}
+
+
+@app.get("/admins/{admin_id}/oauth/status")
+def oauth_status(admin_id: str):
+    roster = get_roster()
+    if roster.get(admin_id) is None:
+        raise HTTPException(status_code=404, detail="Unknown admin_id")
+    status = google_auth.oauth_status(admin_id)
+    status["notion"] = "connected" if notion_token_for(admin_id) else "missing"
+    return status
+
+
+@app.get("/oauth/google/callback")
+def google_oauth_callback(code: str, state: str):
+    """state = admin_id from consent start."""
+    admin_id = state
+    roster = get_roster()
+    if roster.get(admin_id) is None:
+        raise HTTPException(status_code=400, detail=f"Invalid state admin_id={admin_id}")
+    try:
+        path = google_auth.exchange_code(admin_id, code)
+    except google_auth.GoogleAuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    status = google_auth.oauth_status(admin_id)
+    status["saved_to"] = str(path)
+    return status
+
+
 @app.post("/runs", response_model=CreateRunResponse)
 def create_run(req: CreateRunRequest):
-    # Idempotency
-    if req.source_id and req.source_id in _source_to_run:
-        existing_run_id = _source_to_run[req.source_id]
-        state = _get_state(existing_run_id)
-        return CreateRunResponse(run_id=existing_run_id, status=state.get("status", "running"))
+    admin_id = _resolve_admin_id(req.admin_id)
+    roster = get_roster()
 
-    admin_id = _register_admin(req.admin_id)
+    # Idempotency scoped by admin
+    if req.source_id:
+        key = (admin_id, req.source_id)
+        if key in _source_to_run:
+            existing_run_id = _source_to_run[key]
+            state = _get_state(existing_run_id)
+            return CreateRunResponse(
+                run_id=existing_run_id, status=state.get("status", "running")
+            )
 
     run_id = str(uuid.uuid4())
     if req.source_id:
-        _source_to_run[req.source_id] = run_id
+        _source_to_run[(admin_id, req.source_id)] = run_id
 
     initial_state: LifeState = {
         "run_id": run_id,
         "thread_id": run_id,
         "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "family_id": roster.family_id,
         "admin_id": admin_id,
+        "shared_with": roster.default_shared_with(),
+        "approval_assignee": None,
         "trigger": {
             "type": req.trigger_type,
             "raw": req.trigger_payload,
@@ -122,8 +247,22 @@ def create_run(req: CreateRunRequest):
 
 
 @app.get("/runs/{run_id}")
-def get_run(run_id: str) -> dict:
-    return _get_state(run_id)
+def get_run(run_id: str, admin_id: str | None = None) -> dict:
+    state = _get_state(run_id)
+    if admin_id:
+        roster = get_roster()
+        if roster.get(admin_id) is None:
+            raise HTTPException(status_code=403, detail="Unknown admin_id")
+        allowed = {
+            state.get("admin_id"),
+            *(state.get("shared_with") or []),
+        }
+        owner = roster.owner()
+        if owner:
+            allowed.add(owner.admin_id)
+        if admin_id not in allowed:
+            raise HTTPException(status_code=403, detail="Not allowed to view this run")
+    return state
 
 
 @app.post("/runs/{run_id}/approve")
@@ -133,9 +272,14 @@ def approve_run(run_id: str, req: ApproveRequest) -> dict:
     if state.get("status") != "needs_approval":
         raise HTTPException(status_code=409, detail="Run is not awaiting approval")
 
-    _register_admin(req.admin_id)
+    roster = get_roster()
+    if not roster.can_approve(req.admin_id):
+        raise HTTPException(
+            status_code=403,
+            detail="Admin cannot approve (unknown or viewer role)",
+        )
 
-    # Inject approval decision into state and resume
+    # Inject approval — do NOT overwrite requester admin_id (token owner)
     approval_key = f"hitl:{run_id}"
     config = {"configurable": {"thread_id": run_id}}
 
@@ -143,7 +287,7 @@ def approve_run(run_id: str, req: ApproveRequest) -> dict:
         config,
         {
             "approvals": {approval_key: req.decision},
-            "admin_id": req.admin_id,
+            "approval_assignee": req.admin_id,
             "status": "running" if req.decision == "approve" else "abort",
             "needs_approval": False,
         },
