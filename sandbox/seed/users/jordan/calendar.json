@@ -1,0 +1,31 @@
+{
+  "calendar_id": "primary",
+  "timezone": "America/Los_Angeles",
+  "events": [
+    {
+      "id": "evt-jordan-conflict",
+      "summary": "Customer call — Acme",
+      "start": "2026-09-15T14:00:00-07:00",
+      "end": "2026-09-15T14:45:00-07:00",
+      "busy": true,
+      "source": "seed",
+      "note": "Conflicts with Sam's Monday 2pm ask"
+    },
+    {
+      "id": "evt-jordan-lunch",
+      "summary": "Lunch",
+      "start": "2026-09-15T12:00:00-07:00",
+      "end": "2026-09-15T13:00:00-07:00",
+      "busy": true,
+      "source": "seed"
+    },
+    {
+      "id": "evt-jordan-interview",
+      "summary": "Candidate interview",
+      "start": "2026-09-17T10:00:00-07:00",
+      "end": "2026-09-17T11:00:00-07:00",
+      "busy": true,
+      "source": "seed"
+    }
+  ]
+}

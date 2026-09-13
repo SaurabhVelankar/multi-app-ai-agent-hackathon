@@ -8,6 +8,7 @@ from typing import Optional
 
 from life_os import idempotency
 from life_os.tools._common import use_mock_connectors
+from life_os.sandbox import sandbox_enabled
 from life_os.types import GmailDraft, ToolResult, make_tool_result
 
 
@@ -24,7 +25,30 @@ def draft_gmail_reply(
         return cached  # type: ignore[return-value]
 
     if use_mock_connectors():
-        draft: GmailDraft = {
+        if sandbox_enabled():
+            from life_os.sandbox import add_draft, resolve_user_id
+
+            user_id = resolve_user_id(admin_id=admin_id)
+            draft = add_draft(
+                user_id,
+                run_id=run_id,
+                body=body,
+                thread_id=thread_id,
+            )
+            draft_out: GmailDraft = {
+                "draft_id": draft["draft_id"],
+                "thread_id": thread_id,
+                "body": body,
+                "run_id": run_id,
+            }
+            print(
+                f"[sandbox:gmail] draft_reply user={user_id} "
+                f"draft_id={draft_out['draft_id']} thread_id={thread_id}"
+            )
+            idempotency.put_cached(admin_id, idem_key, draft_out)
+            return draft_out
+
+        draft = {
             "draft_id": f"mock-draft-{run_id}",
             "thread_id": thread_id,
             "body": body,
@@ -87,6 +111,31 @@ def send_gmail(
         )
 
     if use_mock_connectors():
+        if sandbox_enabled():
+            from life_os.sandbox import resolve_user_id, send_draft
+
+            user_id = resolve_user_id(admin_id=admin_id)
+            try:
+                sent = send_draft(user_id, draft_id)
+            except KeyError as exc:
+                return make_tool_result(
+                    ok=False,
+                    app="gmail",
+                    action="send",
+                    idempotency_key=idem_key,
+                    error=str(exc),
+                )
+            print(f"[sandbox:gmail] SEND user={user_id} draft_id={draft_id}")
+            result = make_tool_result(
+                ok=True,
+                app="gmail",
+                action="send",
+                external_id=sent.get("sent_id") or draft_id,
+                idempotency_key=idem_key,
+                raw={"sandbox": True, "user_id": user_id, "draft_id": draft_id},
+            )
+            return idempotency.put_cached(admin_id, idem_key, result)
+
         print(f"[mock:gmail] SEND draft_id={draft_id} run_id={run_id}")
         result = make_tool_result(
             ok=True,

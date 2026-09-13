@@ -1,0 +1,33 @@
+{
+  "mailbox": "jordan@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-jordan-001",
+      "thread_id": "thread-jordan-001",
+      "label": "inbox",
+      "scenario": "shared_conflict",
+      "subject": "Design review Monday 2pm?",
+      "from": "sam@example.com",
+      "to": ["jordan@lifeos.sandbox"],
+      "cc": [],
+      "date": "2026-09-13T11:00:00Z",
+      "snippet": "Can we do design review Monday at 2pm PT?",
+      "body": "Jordan — can we lock design review for Monday at 2:00–2:45pm PT? Need your call on the new onboarding flow.\n\nSam"
+    },
+    {
+      "id": "msg-jordan-002",
+      "thread_id": "thread-jordan-002",
+      "label": "inbox",
+      "scenario": "meeting_clear",
+      "subject": "Coffee next week?",
+      "from": "riley@example.com",
+      "to": ["jordan@lifeos.sandbox"],
+      "cc": [],
+      "date": "2026-09-13T08:20:00Z",
+      "snippet": "Would love 30 min next Wednesday morning",
+      "body": "Hey Jordan,\n\nWould love 30 minutes next Wednesday morning to catch up on the hiring pipeline. Does 10:00am PT work?\n\nRiley"
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}

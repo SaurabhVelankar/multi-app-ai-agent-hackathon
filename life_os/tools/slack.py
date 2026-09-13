@@ -6,6 +6,7 @@ from typing import Optional
 
 from life_os import idempotency
 from life_os.tools._common import env, use_mock_connectors
+from life_os.sandbox import sandbox_enabled
 from life_os.types import ToolResult, make_tool_result
 
 
@@ -21,6 +22,22 @@ def post_slack_receipt(
         return cached
 
     if use_mock_connectors():
+        if sandbox_enabled():
+            from life_os.sandbox import post_slack, resolve_user_id
+
+            user_id = resolve_user_id(admin_id=admin_id)
+            msg = post_slack(user_id, run_id=run_id, text=text)
+            print(f"[sandbox:slack] receipt user={user_id} run_id={run_id}")
+            result = make_tool_result(
+                ok=True,
+                app="slack",
+                action="post_receipt",
+                external_id=msg["ts"],
+                idempotency_key=idem_key,
+                raw={"sandbox": True, "user_id": user_id, **msg},
+            )
+            return idempotency.put_cached(admin_id, idem_key, result)
+
         fake_id = f"mock-slack-receipt-{run_id}"
         print(f"[mock:slack] receipt run_id={run_id} text={text!r}")
         result = make_tool_result(

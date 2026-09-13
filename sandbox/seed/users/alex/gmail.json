@@ -1,0 +1,59 @@
+{
+  "mailbox": "alex@lifeos.sandbox",
+  "messages": [
+    {
+      "id": "msg-alex-001",
+      "thread_id": "thread-alex-001",
+      "label": "inbox",
+      "scenario": "meeting_clear",
+      "subject": "Re: Q4 planning sync — can we meet?",
+      "from": "sarah@example.com",
+      "to": ["alex@lifeos.sandbox"],
+      "cc": [],
+      "date": "2026-09-13T09:00:00Z",
+      "snippet": "Can we get 30 minutes this coming week for Q4 roadmap?",
+      "body": "Hey Alex!\n\nHope you're well. I wanted to check if we can get 30 minutes on the calendar this coming week to go over the Q4 roadmap. I'm free Monday or Tuesday afternoon (PT).\n\nAlso, can you send over the project brief so I can prep?\n\nThanks,\nSarah"
+    },
+    {
+      "id": "msg-alex-002",
+      "thread_id": "thread-alex-002",
+      "label": "inbox",
+      "scenario": "meeting_ambiguous",
+      "subject": "quick chat sometime?",
+      "from": "devon@example.com",
+      "to": ["alex@lifeos.sandbox"],
+      "cc": [],
+      "date": "2026-09-13T10:15:00Z",
+      "snippet": "We should catch up whenever you're free",
+      "body": "Hey — we should catch up sometime soon about the partnership. Whenever you're free works. No rush.\n\n— Devon"
+    },
+    {
+      "id": "msg-alex-003",
+      "thread_id": "thread-alex-003",
+      "label": "inbox",
+      "scenario": "not_a_meeting",
+      "subject": "Your weekly product digest",
+      "from": "noreply@newsletter.example",
+      "to": ["alex@lifeos.sandbox"],
+      "cc": [],
+      "date": "2026-09-13T07:00:00Z",
+      "snippet": "Top stories in AI tooling this week",
+      "body": "Here are this week's top stories in AI tooling. No action required. Unsubscribe anytime."
+    },
+    {
+      "id": "msg-alex-004",
+      "thread_id": "thread-alex-004",
+      "label": "inbox",
+      "scenario": "follow_up_task",
+      "subject": "Invoice #4421 reminder",
+      "from": "billing@acme.example",
+      "to": ["alex@lifeos.sandbox"],
+      "cc": [],
+      "date": "2026-09-12T18:30:00Z",
+      "snippet": "Friendly reminder that invoice #4421 is due Friday",
+      "body": "Hi Alex,\n\nFriendly reminder that invoice #4421 ($420) is due this Friday. Please confirm once paid.\n\nBilling — Acme"
+    }
+  ],
+  "drafts": [],
+  "sent": []
+}

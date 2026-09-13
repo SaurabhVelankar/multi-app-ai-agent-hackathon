@@ -1,0 +1,6 @@
+{
+  "spreadsheet_title": "Jordan Life OS Audit",
+  "rows": [
+    ["run_id", "timestamp", "status", "apps_touched", "notes"]
+  ]
+}

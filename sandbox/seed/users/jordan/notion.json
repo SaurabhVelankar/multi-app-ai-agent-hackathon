@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-jordan-home",
+      "title": "Jordan Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

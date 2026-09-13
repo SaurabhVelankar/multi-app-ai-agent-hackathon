@@ -17,7 +17,7 @@ Inspired by the *outcome → sub-agents → apps* shape of [Perplexity Computer]
 | **API** | Working | FastAPI on `:8000` — `POST /runs`, `GET /runs/{id}`, `POST /runs/{id}/approve`, `GET /health` |
 | **Frontend** | Working | Next.js cockpit in [`web/`](./web/) on `:3000` |
 | **LLM** | **Gemini (default)** | `LLM_PROVIDER=gemini`, model `gemini-3.6-flash` — needs `GEMINI_API_KEY` in `.env` |
-| **Connectors** | **Mock by default** | `LIFE_OS_USE_MOCK_CONNECTORS=1` — fake Gmail/Calendar/Notion/Slack/Sheets writes (no real OAuth yet) |
+| **Connectors** | **Mock + sandbox by default** | Writes land in `sandbox/.runtime/` per user (alex/jordan) — not live Gmail yet |
 | **Live integrations** | Not required to run | Set mock flag to `0` + fill tokens when ready ([`CONNECTORS.md`](./CONNECTORS.md)) |
 | **Reliability brief / 2-min demo** | TODO | Next team focus |
 
@@ -34,7 +34,7 @@ Inspired by the *outcome → sub-agents → apps* shape of [Perplexity Computer]
 | [`CONNECTORS.md`](./CONNECTORS.md) | OAuth, scopes, adapter rules |
 | [`contracts/openapi.yaml`](./contracts/openapi.yaml) | Frontend ↔ API contract |
 | [`Hackathon.md`](./Hackathon.md) | Event / judging |
-| [`web/README.md`](./web/README.md) | Frontend details |
+| [`sandbox/README.md`](./sandbox/README.md) | Per-user Gmail/Calendar sandbox data (Shared Life OS) |
 
 ---
 

@@ -8,6 +8,7 @@ from typing import Any, Mapping, Optional
 
 from life_os import idempotency
 from life_os.tools._common import env, use_mock_connectors
+from life_os.sandbox import sandbox_enabled
 from life_os.types import ToolResult, make_tool_result
 
 
@@ -52,6 +53,22 @@ def append_sheets_audit(
     row = _flatten_row(run_id, life_state_row, admin_id)
 
     if use_mock_connectors():
+        if sandbox_enabled():
+            from life_os.sandbox import append_audit_row, resolve_user_id
+
+            user_id = resolve_user_id(admin_id=admin_id)
+            meta = append_audit_row(user_id, row)
+            print(f"[sandbox:sheets] append_audit user={user_id} row={row}")
+            result = make_tool_result(
+                ok=True,
+                app="sheets",
+                action="append_row",
+                external_id=f"sbx-sheets-{user_id}-{meta['row_index']}",
+                idempotency_key=idem_key,
+                raw={"sandbox": True, "user_id": user_id, **meta},
+            )
+            return idempotency.put_cached(admin_id, idem_key, result)
+
         fake_id = f"mock-sheets-row-{run_id}"
         print(f"[mock:sheets] append_audit row={row}")
         result = make_tool_result(

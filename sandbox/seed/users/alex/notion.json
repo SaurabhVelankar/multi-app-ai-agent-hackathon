@@ -1,0 +1,10 @@
+{
+  "pages": [
+    {
+      "id": "page-alex-home",
+      "title": "Alex Life OS",
+      "parent": null,
+      "source": "seed"
+    }
+  ]
+}

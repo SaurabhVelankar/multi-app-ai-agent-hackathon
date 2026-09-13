@@ -6,6 +6,7 @@ from typing import Any, Optional
 
 from life_os import idempotency
 from life_os.tools._common import env, use_mock_connectors
+from life_os.sandbox import sandbox_enabled
 from life_os.types import ToolResult, make_tool_result
 
 
@@ -36,6 +37,33 @@ def create_calendar_event(
         return idempotency.put_cached(admin_id, idempotency_key, result)
 
     if use_mock_connectors():
+        if sandbox_enabled():
+            from life_os.sandbox import create_event, resolve_user_id
+
+            user_id = resolve_user_id(admin_id=admin_id)
+            event = create_event(
+                user_id,
+                run_id=run_id,
+                title=title,
+                start=start,
+                end=end,
+                idempotency_key=idempotency_key,
+            )
+            print(
+                f"[sandbox:calendar] create_event user={user_id} "
+                f"title={title!r} id={event['id']}"
+            )
+            result = make_tool_result(
+                ok=True,
+                app="calendar",
+                action="create_event",
+                external_id=event["id"],
+                idempotency_key=idempotency_key,
+                raw={"sandbox": True, "user_id": user_id, **event},
+                proposed_only=False,
+            )
+            return idempotency.put_cached(admin_id, idempotency_key, result)
+
         fake_id = f"mock-cal-{run_id}-{idempotency_key[-8:]}"
         print(f"[mock:calendar] create_event title={title!r} start={start} end={end} id={fake_id}")
         result = make_tool_result(

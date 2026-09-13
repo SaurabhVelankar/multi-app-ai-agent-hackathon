@@ -1,0 +1,9 @@
+{
+  "user_id": "alex",
+  "admin_id": "admin_01",
+  "display_name": "Alex Chen",
+  "email": "alex@lifeos.sandbox",
+  "timezone": "America/Los_Angeles",
+  "notion_parent_title": "Alex Life OS",
+  "slack_channel": "#alex-life-os"
+}

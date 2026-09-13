@@ -6,6 +6,7 @@ from typing import Optional
 
 from life_os import idempotency
 from life_os.tools._common import use_mock_connectors
+from life_os.sandbox import sandbox_enabled
 from life_os.types import ToolResult, make_tool_result
 
 
@@ -22,6 +23,22 @@ def create_notion_page(
         return cached
 
     if use_mock_connectors():
+        if sandbox_enabled():
+            from life_os.sandbox import append_notion_page, resolve_user_id
+
+            user_id = resolve_user_id(admin_id=admin_id)
+            page = append_notion_page(user_id, run_id=run_id, title=title, body=body)
+            print(f"[sandbox:notion] create_page user={user_id} title={title!r} id={page['id']}")
+            result = make_tool_result(
+                ok=True,
+                app="notion",
+                action="create_page",
+                external_id=page["id"],
+                idempotency_key=idempotency_key,
+                raw={"sandbox": True, "user_id": user_id, **page},
+            )
+            return idempotency.put_cached(admin_id, idempotency_key, result)
+
         fake_id = f"mock-notion-{run_id}-{idempotency_key[-8:]}"
         print(f"[mock:notion] create_page title={title!r} id={fake_id}")
         result = make_tool_result(

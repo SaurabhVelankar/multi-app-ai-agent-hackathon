@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "timezone": "America/Los_Angeles",
+  "description": "Shared Life OS connector sandbox — deterministic per-user Gmail/Calendar worlds",
+  "users": [
+    {
+      "user_id": "alex",
+      "admin_id": "admin_01",
+      "admin_id_aliases": ["admin-1", "admin_1"],
+      "display_name": "Alex Chen",
+      "email": "alex@lifeos.sandbox"
+    },
+    {
+      "user_id": "jordan",
+      "admin_id": "admin_02",
+      "admin_id_aliases": ["admin-2", "admin_2"],
+      "display_name": "Jordan Lee",
+      "email": "jordan@lifeos.sandbox"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "meeting_clear",
+      "user_id": "alex",
+      "gmail_message_id": "msg-alex-001",
+      "expect": "schedule_meeting_and_draft_reply"
+    },
+    {
+      "id": "meeting_ambiguous",
+      "user_id": "alex",
+      "gmail_message_id": "msg-alex-002",
+      "expect": "needs_hitl_or_propose_only"
+    },
+    {
+      "id": "not_a_meeting",
+      "user_id": "alex",
+      "gmail_message_id": "msg-alex-003",
+      "expect": "no_calendar_create"
+    },
+    {
+      "id": "shared_conflict",
+      "user_id": "jordan",
+      "gmail_message_id": "msg-jordan-001",
+      "expect": "detect_busy_or_propose_alternate"
+    }
+  ]
+}

@@ -89,6 +89,9 @@ data/local/
 *.db
 .life_os/
 
+# Connector sandbox runtime (seed stays tracked)
+sandbox/.runtime/
+
 # --- Jupyter ---
 .ipynb_checkpoints/
 
