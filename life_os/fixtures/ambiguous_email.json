@@ -1,0 +1,9 @@
+{
+  "fixture_id": "fixture-ambiguous-001",
+  "type": "email",
+  "subject": "Maybe catch up sometime?",
+  "from": "alex@example.com",
+  "to": "me@example.com",
+  "date": "2026-09-13T14:00:00Z",
+  "body": "Hey — not sure if we need a formal meeting or just a quick reply. Could you either put something on the calendar or just email the team that we're delaying the launch? Whatever you think is fine. — Alex"
+}

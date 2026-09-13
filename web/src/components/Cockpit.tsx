@@ -1,31 +1,53 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { AdminRoster } from "@/components/AdminRoster";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminRoster, roleOf } from "@/components/AdminRoster";
 import { HitlPanel } from "@/components/HitlPanel";
 import { Receipts } from "@/components/Receipts";
 import { StatusPill } from "@/components/StatusPill";
 import { Timeline } from "@/components/Timeline";
 import { TriggerPanel } from "@/components/TriggerPanel";
 import {
+  addAdmin,
   approveRun,
   createRun,
   getApiBase,
   getRun,
   healthCheck,
+  listAdmins,
+  startGoogleOAuth,
   useMocks,
 } from "@/lib/api";
-import type { CreateRunRequest, LifeState } from "@/lib/types";
+import type {
+  AdminListResponse,
+  CreateRunRequest,
+  LifeState,
+} from "@/lib/types";
+import { canApprove } from "@/lib/types";
 
 export function Cockpit() {
-  const [admins, setAdmins] = useState<string[]>(["admin-1"]);
-  const [adminId, setAdminId] = useState("admin-1");
+  const [roster, setRoster] = useState<AdminListResponse | null>(null);
+  const [adminId, setAdminId] = useState("admin_01");
   const [state, setState] = useState<LifeState | null>(null);
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const [apiOk, setApiOk] = useState<boolean | null>(null);
 
   const mocks = useMocks();
+  const activeRole = useMemo(
+    () => roleOf(roster, adminId),
+    [roster, adminId],
+  );
+
+  const loadRoster = useCallback(async () => {
+    const next = await listAdmins();
+    setRoster(next);
+    setAdminId((prev) => {
+      if (next.admins.some((a) => a.admin_id === prev)) return prev;
+      return next.admins[0]?.admin_id ?? prev;
+    });
+    return next;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,11 +63,21 @@ export function Cockpit() {
     };
   }, []);
 
-  const refresh = useCallback(async (runId: string) => {
-    const next = await getRun(runId);
-    setState(next);
-    return next;
-  }, []);
+  useEffect(() => {
+    if (!mocks && apiOk === false) return;
+    void loadRoster().catch((e) =>
+      setBanner(e instanceof Error ? e.message : "Failed to load roster"),
+    );
+  }, [mocks, apiOk, loadRoster]);
+
+  const refresh = useCallback(
+    async (runId: string) => {
+      const next = await getRun(runId, adminId);
+      setState(next);
+      return next;
+    },
+    [adminId],
+  );
 
   useEffect(() => {
     if (!state?.run_id) return;
@@ -88,11 +120,55 @@ export function Cockpit() {
       setState(next);
       setBanner(
         decision === "approve"
-          ? "Approved — run resumed through Auditor."
+          ? "Approved — run resumed through Auditor. Writes still use the requester's tokens."
           : "Denied — run aborted with audit trail.",
       );
     } catch (e) {
       setBanner(e instanceof Error ? e.message : "Approve failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleConnectGoogle(id: string) {
+    setBusy(true);
+    setBanner(null);
+    try {
+      const { auth_url } = await startGoogleOAuth(id);
+      if (mocks) {
+        await loadRoster();
+        setBanner(`Mock: marked ${id} Google as connected.`);
+        return;
+      }
+      window.open(auth_url, "_blank", "noopener,noreferrer");
+      setBanner("Complete Google consent in the new tab, then refresh roster.");
+      window.setTimeout(() => {
+        void loadRoster().catch(() => undefined);
+      }, 2500);
+    } catch (e) {
+      setBanner(e instanceof Error ? e.message : "OAuth start failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAddAdmin() {
+    setBusy(true);
+    setBanner(null);
+    try {
+      const n = (roster?.admins.length ?? 0) + 1;
+      const id = `admin_${String(n).padStart(2, "0")}`;
+      await addAdmin({
+        acting_admin_id: adminId,
+        admin_id: id,
+        name: `Admin ${n}`,
+        role: "operator",
+      });
+      await loadRoster();
+      setAdminId(id);
+      setBanner(`Added ${id} (in-memory until backend restart).`);
+    } catch (e) {
+      setBanner(e instanceof Error ? e.message : "Add admin failed");
     } finally {
       setBusy(false);
     }
@@ -103,10 +179,10 @@ export function Cockpit() {
       <header className="hero">
         <div>
           <p className="eyebrow">Life OS</p>
-          <h1>Operations cockpit</h1>
+          <h1>Family operations cockpit</h1>
           <p className="lede">
-            Trigger a life outcome, watch the multi-agent graph act across apps,
-            approve only what can&apos;t be undone.
+            Each admin uses their own Google tokens. Approve does not switch
+            whose calendar or Gmail is written.
           </p>
         </div>
         <div className="hero-meta">
@@ -118,8 +194,21 @@ export function Cockpit() {
             api: {getApiBase()}{" "}
             {apiOk === null ? "" : apiOk ? "· up" : "· unreachable"}
           </div>
+          {(state?.family_id || roster?.family_id) && (
+            <div className="meta-line mono">
+              family: {state?.family_id || roster?.family_id}
+            </div>
+          )}
           {state?.run_id && (
             <div className="meta-line mono">run: {state.run_id}</div>
+          )}
+          {state?.admin_id && (
+            <div className="meta-line mono">
+              requester tokens: {state.admin_id}
+              {state.approval_assignee
+                ? ` · approved by ${state.approval_assignee}`
+                : ""}
+            </div>
           )}
         </div>
       </header>
@@ -138,14 +227,12 @@ export function Cockpit() {
       <div className="grid">
         <div className="col">
           <AdminRoster
-            admins={admins}
+            roster={roster}
             activeId={adminId}
             onSelect={setAdminId}
-            onAdd={(id) =>
-              setAdmins((prev) =>
-                prev.includes(id) || prev.length >= 10 ? prev : [...prev, id],
-              )
-            }
+            onConnectGoogle={handleConnectGoogle}
+            onAdd={handleAddAdmin}
+            busy={busy}
           />
           <TriggerPanel
             adminId={adminId}
@@ -155,6 +242,7 @@ export function Cockpit() {
           <HitlPanel
             state={state}
             adminId={adminId}
+            canApprove={canApprove(activeRole)}
             busy={busy}
             onDecide={handleDecide}
           />

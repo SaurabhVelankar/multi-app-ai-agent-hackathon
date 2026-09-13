@@ -66,12 +66,45 @@ def executor_node(state: Mapping[str, Any]) -> dict[str, Any]:
                 }
             )
 
-    notion_steps = [s for s in steps if s.get("action") in {"notion_page", "create_page", "notion"}]
-    slack_steps = [s for s in steps if s.get("action") in {"slack_receipt", "slack"}]
-    gmail_steps = [s for s in steps if s.get("action") in {"gmail_draft", "draft_email", "gmail"}]
+    notion_steps = [
+        s
+        for s in steps
+        if s.get("action") in {"notion_page", "create_page", "notion", "create_notion"}
+    ]
+    slack_steps = [
+        s
+        for s in steps
+        if s.get("action") in {"slack_receipt", "slack", "notify_slack"}
+    ]
+    gmail_steps = [
+        s
+        for s in steps
+        if s.get("action") in {"gmail_draft", "draft_email", "gmail", "send_email"}
+    ]
 
-    # Demo default: if no explicit executor actions, do Notion + Slack + Gmail draft
-    if not notion_steps and not slack_steps and not gmail_steps:
+    write_actions = {
+        "notion_page",
+        "create_page",
+        "notion",
+        "create_notion",
+        "slack_receipt",
+        "slack",
+        "notify_slack",
+        "gmail_draft",
+        "draft_email",
+        "gmail",
+        "send_email",
+    }
+    info_only = bool(steps) and all(
+        (s.get("action") in {"info_only", "none"} or s.get("app") == "none")
+        and s.get("action") not in write_actions
+        for s in steps
+    )
+
+    # Demo default only when plan has no executor actions and is not explicitly info-only
+    if info_only:
+        pass
+    elif not notion_steps and not slack_steps and not gmail_steps:
         _do_notion()
         _do_slack()
         _do_gmail_draft()
@@ -81,6 +114,7 @@ def executor_node(state: Mapping[str, Any]) -> dict[str, Any]:
         for s in slack_steps:
             _do_slack(s)
         for s in gmail_steps:
+            # Stage draft only — send_email still requires Critic/HITL + send_gmail tool
             _do_gmail_draft(s)
 
     return {

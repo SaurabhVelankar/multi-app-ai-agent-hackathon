@@ -8,9 +8,13 @@ Next.js App Router cockpit for the Life OS orchestrator API.
 - Poll run state and show the **pipeline + plan steps**
 - **Approve / Deny** HITL gates
 - Show **execution receipts** / tool results / audit ref
-- Admin roster stub (max 10)
+- Family roster from `GET /admins` (roles, Google connect status, max 10)
+- Per-admin Google OAuth start via `GET /admins/{id}/oauth/google/start`
+- HITL approve/deny with role checks (owner/operator only); token owner stays the run requester
 
-Contract: [`../contracts/openapi.yaml`](../contracts/openapi.yaml)
+Aligned with shared-LifeOS backend fields: `family_id`, `admin_id`, `shared_with`, `approval_assignee`.
+
+Contract: [`../contracts/openapi.yaml`](../contracts/openapi.yaml) · [`../FAMILY_ADMIN.md`](../FAMILY_ADMIN.md)
 
 ## Setup
 

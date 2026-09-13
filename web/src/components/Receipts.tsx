@@ -17,8 +17,27 @@ export function Receipts({ state }: { state: LifeState | null }) {
     <section className="panel">
       <div className="panel-head">
         <h2>Side effects</h2>
-        <p>What landed across apps.</p>
+        <p>
+          What landed across apps
+          {state?.admin_id
+            ? ` · writes as ${state.admin_id}`
+            : ""}
+          .
+        </p>
       </div>
+
+      {(state?.family_id || state?.shared_with?.length) && (
+        <p className="mono muted attribution">
+          {state.family_id ? `family ${state.family_id}` : ""}
+          {state.family_id && state.shared_with?.length ? " · " : ""}
+          {state.shared_with?.length
+            ? `shared_with [${state.shared_with.join(", ")}]`
+            : ""}
+          {state.approval_assignee
+            ? ` · approved_by ${state.approval_assignee}`
+            : ""}
+        </p>
+      )}
 
       {receipts.length === 0 && tools.length === 0 && (
         <p className="muted">No receipts yet — start a run.</p>
