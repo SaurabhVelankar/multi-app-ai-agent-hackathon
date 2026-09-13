@@ -1,0 +1,5 @@
+# Integration / Agent 2 deps (merge into root requirements when Agent 1 ready)
+google-auth>=2.29.0
+google-auth-oauthlib>=1.2.0
+google-api-python-client>=2.127.0
+pytest>=8.0.0

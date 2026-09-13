@@ -1,0 +1,255 @@
+openapi: "3.1.0"
+info:
+  title: Life OS Orchestrator API
+  version: "0.1.0"
+  description: |
+    FastAPI surface for the Life OS LangGraph orchestrator.
+    Agent 3 (Frontend) consumes this. Agent 2 (Integrations) is notified of audit/HITL field changes.
+
+servers:
+  - url: http://localhost:8000
+    description: Local dev
+
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Liveness probe
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /runs:
+    post:
+      operationId: createRun
+      summary: Start a new Life OS run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRunRequest"
+      responses:
+        "200":
+          description: Run created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateRunResponse"
+        "400":
+          description: Bad request (e.g. admin roster full)
+
+  /runs/{run_id}:
+    get:
+      operationId: getRun
+      summary: Get full LifeState snapshot + node trace
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: LifeState snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifeState"
+        "404":
+          description: Run not found
+
+  /runs/{run_id}/approve:
+    post:
+      operationId: approveRun
+      summary: Approve or deny a HITL-interrupted run
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveRequest"
+      responses:
+        "200":
+          description: Run resumed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifeState"
+        "404":
+          description: Run not found
+        "409":
+          description: Run not in needs_approval state
+
+components:
+  schemas:
+    CreateRunRequest:
+      type: object
+      required:
+        - trigger_type
+        - trigger_payload
+      properties:
+        trigger_type:
+          type: string
+          enum: [goal, email, slack]
+        trigger_payload:
+          description: Raw goal string or email/Slack message dict
+          oneOf:
+            - type: string
+            - type: object
+        admin_id:
+          type: string
+          nullable: true
+        source_id:
+          type: string
+          nullable: true
+          description: Idempotency key (message-id, fixture id)
+
+    CreateRunResponse:
+      type: object
+      properties:
+        run_id:
+          type: string
+        status:
+          type: string
+          enum: [running, needs_approval, pass, abort, error]
+
+    ApproveRequest:
+      type: object
+      required:
+        - decision
+        - admin_id
+      properties:
+        decision:
+          type: string
+          enum: [approve, deny]
+        admin_id:
+          type: string
+
+    TriggerDict:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [goal, email, slack]
+        raw:
+          oneOf:
+            - type: string
+            - type: object
+        source_id:
+          type: string
+          nullable: true
+
+    IntentDict:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [meeting, task, follow_up, info]
+        summary:
+          type: string
+        entities:
+          type: object
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    PlanStepDict:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        app:
+          type: string
+        args:
+          type: object
+        requires_hitl:
+          type: boolean
+        status:
+          type: string
+          enum: [pending, done, skipped, blocked]
+
+    LifeState:
+      type: object
+      properties:
+        run_id:
+          type: string
+        thread_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        admin_id:
+          type: string
+          nullable: true
+        trigger:
+          $ref: "#/components/schemas/TriggerDict"
+        normalized_context:
+          type: object
+        intents:
+          type: array
+          items:
+            $ref: "#/components/schemas/IntentDict"
+        priority_scores:
+          type: object
+        selected_intent:
+          $ref: "#/components/schemas/IntentDict"
+          nullable: true
+        plan_steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanStepDict"
+        calendar_actions:
+          type: array
+          items:
+            type: object
+        drafts:
+          type: array
+          items:
+            type: object
+        approvals:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [approved, rejected, pending]
+        tool_results:
+          type: array
+          items:
+            type: object
+        execution_receipts:
+          type: array
+          items:
+            type: object
+        errors:
+          type: array
+          items:
+            type: object
+        retry_count:
+          type: integer
+        status:
+          type: string
+          enum: [running, needs_approval, pass, abort, error]
+        needs_approval:
+          type: boolean
+        audit_ref:
+          type: string
+          nullable: true

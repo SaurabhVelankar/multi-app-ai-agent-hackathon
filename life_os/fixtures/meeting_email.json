@@ -1,0 +1,9 @@
+{
+  "fixture_id": "fixture-meeting-001",
+  "type": "email",
+  "subject": "Re: Q4 planning sync — can we meet?",
+  "from": "sarah@example.com",
+  "to": "me@example.com",
+  "date": "2026-09-13T09:00:00Z",
+  "body": "Hey! Hope you're well. I wanted to check if we can get 30 minutes on the calendar this coming week to go over the Q4 roadmap. I'm free Monday or Tuesday afternoon. Also, can you send over the project brief so I can prep? Let me know and I'll send a proper invite. Thanks, Sarah"
+}
