@@ -2,7 +2,7 @@
 
 > **Project anchor.** Everything we build points here.  
 > Hackathon context: [`Hackathon.md`](./Hackathon.md) · Idea source: [`ideas.md`](./ideas.md)  
-> **System design:** [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md)  
+> System design: [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md) · Connectors: [`CONNECTORS.md`](./CONNECTORS.md)  
 > **Status:** LOCKED — Idea #1 Life OS  
 > **Deadline:** Demo-ready by **4:00 PM PT** (build window ends)
 

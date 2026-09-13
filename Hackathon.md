@@ -163,5 +163,6 @@ We are **not** optimizing for a thin single-agent glue script. We want a **big p
 - Hackathon site: [https://multiappagenthackathon.com/](https://multiappagenthackathon.com/)  
 - Ideas backlog: [`ideas.md`](./ideas.md)  
 - **Project PRD (locked — Life OS):** [`PRD.md`](./PRD.md)  
-- **System design:** [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md)
+- **System design:** [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md)  
+- **Connectors / OAuth:** [`CONNECTORS.md`](./CONNECTORS.md)
 

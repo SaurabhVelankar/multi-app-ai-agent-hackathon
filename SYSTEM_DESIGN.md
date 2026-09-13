@@ -279,6 +279,8 @@ LifeState = {
 
 ## 8. Integration design
 
+> **Canonical connector rules, OAuth scopes, permissions, and per-app checklists:** [`CONNECTORS.md`](./CONNECTORS.md).
+
 ### 8.1 Adapter interface
 
 Every adapter exposes a small surface:
