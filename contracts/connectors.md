@@ -3,7 +3,9 @@
 > **Sole file editor: Agent 2.** Agent 1 may propose signatures but must not commit edits.  
 > Change protocol: propose in chat → both ACK → Agent 2 updates this file → Agent 2 implements → Agent 1 wires imports.
 
-**Status:** FROZEN for Tier 0–1 (pending Agent 1 ACK)
+**Status:** FROZEN for Tier 0–1 — **per-user OAuth** (each `admin_id` has its own Google token)
+
+**Credentials rule:** Every write tool takes `admin_id`. Google Calendar / Gmail / Sheets load `.oauth/{admin_id}_google.json` (or `ADMIN_XX_GOOGLE_TOKEN_PATH`). Notion uses `ADMIN_XX_NOTION_TOKEN` when set, else shared `NOTION_TOKEN`. Never use another admin’s tokens for writes.
 
 ---
 
@@ -121,7 +123,9 @@ wait_cli_approval(
 ```text
 append_sheets_audit(
   run_id: str,
-  life_state_row: dict,   # flat row: run_id, status, admin_id, apps, errors, timestamp, …
+  life_state_row: dict,   # flat row: run_id, family_id, admin_id, approver,
+                          # approval_assignee, oauth_account, status, apps,
+                          # errors, timestamp, …
   *,
   admin_id: str | None = None
 ) -> tool_result
@@ -188,12 +192,24 @@ Suggested keys:
 
 ```text
 LIFE_OS_USE_MOCK_CONNECTORS=1
-HITL_POLICY=primary
-HITL_FALLBACK_CLI=1
+FAMILY_ID=hauns
+ADMIN_MAX=10
+HITL_POLICY=any_of
+ADMIN_IDS=admin_01,admin_02
+
+ADMIN_01_NAME=Parent A
+ADMIN_01_ROLE=owner
+ADMIN_01_SLACK=U_AAAA
+ADMIN_01_EMAIL=a@example.com
+ADMIN_01_GOOGLE_TOKEN_PATH=.oauth/admin_01_google.json
+
+ADMIN_02_NAME=Parent B
+ADMIN_02_ROLE=operator
+ADMIN_02_GOOGLE_TOKEN_PATH=.oauth/admin_02_google.json
 
 GOOGLE_OAUTH_CLIENT_ID=
 GOOGLE_OAUTH_CLIENT_SECRET=
-GOOGLE_OAUTH_TOKEN_PATH=.oauth/google_token.json
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:8000/oauth/google/callback
 GOOGLE_CALENDAR_ID=primary
 SHEETS_SPREADSHEET_ID=
 SHEETS_AUDIT_RANGE=Audit!A:Z
@@ -205,8 +221,10 @@ NOTION_DATABASE_ID=
 SLACK_BOT_TOKEN=
 SLACK_CHANNEL_ID=
 SLACK_SIGNING_SECRET=
-ADMIN_PRIMARY_SLACK=
 ```
+
+OAuth connect: `GET /admins/{admin_id}/oauth/google/start` → consent → `/oauth/google/callback?state={admin_id}`  
+CLI: `python -m life_os.oauth_google --admin-id admin_01`
 
 ---
 

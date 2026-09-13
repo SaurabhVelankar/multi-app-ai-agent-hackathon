@@ -16,6 +16,8 @@ Inspired by the *outcome → sub-agents → apps* shape of [Perplexity Computer]
 | [`PRD.md`](./PRD.md) | **Product anchor** — requirements, tiers, success bar |
 | [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md) | **Architecture anchor** — graph, state, adapters, failures |
 | [`CONNECTORS.md`](./CONNECTORS.md) | **Integrations bible** — OAuth, scopes, permissions, adapter rules |
+| [`FAMILY_ADMIN.md`](./FAMILY_ADMIN.md) | Family roster (≤10), per-user Google OAuth, HITL routing, audit trail |
+| [`EVALS.md`](./EVALS.md) | Agent evals — golden fixtures, how to run them, how to add new ones |
 | [`Hackathon.md`](./Hackathon.md) | Event brief, judging, team constraints |
 | [`ideas.md`](./ideas.md) | Idea backlog (Life OS locked) |
 

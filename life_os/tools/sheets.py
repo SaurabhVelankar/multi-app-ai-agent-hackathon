@@ -23,7 +23,11 @@ def _flatten_row(run_id: str, life_state_row: Mapping[str, Any], admin_id: Optio
     errors_s = json.dumps(errors) if not isinstance(errors, str) else errors
     return [
         run_id,
+        str(life_state_row.get("family_id") or ""),
         str(admin_id or life_state_row.get("admin_id") or ""),
+        str(life_state_row.get("approver") or ""),
+        str(life_state_row.get("approval_assignee") or ""),
+        str(life_state_row.get("oauth_account") or ""),
         status,
         apps_s,
         errors_s,
@@ -67,7 +71,7 @@ def append_sheets_audit(
         if not spreadsheet_id:
             raise RuntimeError("SHEETS_SPREADSHEET_ID missing")
         range_name = env("SHEETS_AUDIT_RANGE", "Audit!A:Z") or "Audit!A:Z"
-        service = google_auth.build_service("sheets", "v4")
+        service = google_auth.build_service("sheets", "v4", admin_id=admin_id)
         body = {"values": [row]}
         resp = (
             service.spreadsheets()
