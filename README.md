@@ -13,11 +13,31 @@ Inspired by the *outcome → sub-agents → apps* shape of [Perplexity Computer]
 
 | Doc | Purpose |
 |-----|---------|
-| [`PRD.md`](./PRD.md) | **Project anchor** — requirements, architecture, **tiered** build plan |
+| [`PRD.md`](./PRD.md) | **Product anchor** — requirements, tiers, success bar |
+| [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md) | **Architecture anchor** — graph, state, adapters, failures |
 | [`Hackathon.md`](./Hackathon.md) | Event brief, judging, team constraints |
 | [`ideas.md`](./ideas.md) | Idea backlog (Life OS locked) |
 
 **Build rule:** Tier 0 → Tier 1 functional path before any glow-ups. See PRD §7.
+
+---
+
+## Environment setup
+
+```bash
+cp .env.example .env.local
+# then edit .env.local — start with Gemini:
+#   GEMINI_API_KEY=...
+#   GEMINI_MODEL_NAME=gemini-2.5-flash
+```
+
+| File | Commit? | Purpose |
+|------|---------|---------|
+| [`.env.example`](./.env.example) | Yes | Template for the team |
+| `.env.local` | **No** | Your real keys (gitignored) |
+| [`.gitignore`](./.gitignore) | Yes | Keeps secrets, venvs, tokens out of git |
+
+We load from `.env.local` (preferred) or `.env`. More integration vars will land in `.env.example` as we wire Gmail / Calendar / Notion / Slack / Sheets.
 
 ---
 
